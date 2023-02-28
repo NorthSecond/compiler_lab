@@ -36,3 +36,8 @@
 *.iml
 .vscode/*
 *.vscode/*
+
+# flex and bison
+*.tab.c
+*.tab.h
+*.yy.c
