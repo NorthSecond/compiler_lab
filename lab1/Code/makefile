@@ -5,7 +5,11 @@
 CC = gcc
 FLEX = flex
 BISON = bison
+
 CFLAGS = -std=c99
+# Update: 添加C++编译选项 C 带上 -Wall -Wextra -fno-asm -MMD
+# CFLAGS = -std=c99 -Wall -Wextra -fno-asm -MMD
+# CPPFLAGS = -std=c++17 -Wall -Wextra -fno-asm 
 
 # 编译目标：src目录下的所有.c文件
 CFILES = $(shell find ./ -name "*.c")
@@ -16,6 +20,10 @@ LFC = $(shell find ./ -name "*.l" | sed s/[^/]*\\.l/lex.yy.c/)
 YFC = $(shell find ./ -name "*.y" | sed s/[^/]*\\.y/syntax.tab.c/)
 LFO = $(LFC:.c=.o)
 YFO = $(YFC:.c=.o)
+
+# Update：编译目标中加入src目录下的所有.cpp文件
+# CPPFILES = $(shell find ./ -name "*.cpp")
+# OBJS += $(CPPFILES:.cpp=.o)
 
 parser: syntax $(filter-out $(LFO),$(OBJS))
 	$(CC) -o parser $(filter-out $(LFO),$(OBJS)) -lfl -ly
