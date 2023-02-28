@@ -6,7 +6,7 @@
 
 #include "syntax.tab.h"
 
-int yycolumn=1;
+int yycolumn;
 extern bool is_error;
 
 extern int yylex();
@@ -79,6 +79,7 @@ OCT                 [0-7]
 \{                              RETURN_TOKEN(LC);
 "}"                             RETURN_TOKEN(RC);
 struct                          RETURN_TOKEN(STRUCT);
+return                          RETURN_TOKEN(RETURN);
 if                              RETURN_TOKEN(IF);
 else                            RETURN_TOKEN(ELSE);
 while                           RETURN_TOKEN(WHILE);
