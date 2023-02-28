@@ -6,13 +6,16 @@
 
 #include "syntax.tab.h"
 
-int yycolumn;
-extern bool is_error;
+// int yycolumn;
+// extern bool is_error;
 
-extern int yylex();
-extern int atoi();
-extern float atof();
-extern int isNewError(int errorLineno, const char errorChar);
+// extern int atoi();
+// extern float atof();
+int isNewError(int errorLineno, const char errorChar){
+    return 1;
+}
+
+// #define YYDEBUG 1
 
 #if YYDEBUG > 0
 #define debug_printf  printf
@@ -20,23 +23,24 @@ extern int isNewError(int errorLineno, const char errorChar);
 #define debug_printf(...)
 #endif // YYDEBUG
 
-#define YY_USER_ACTION\
-    yylloc.first_line=yylloc.last_line=yylineno;\
-    yylloc.first_column=yycolumn;\
-    yylloc.last_column=yycolumn+yyleng-1;\
-    yycolumn+=yyleng;
+// #define YY_USER_ACTION\
+//     yylloc.first_line=yylloc.last_line=yylineno;\
+//     yylloc.first_column=yycolumn;\
+//     yylloc.last_column=yycolumn+yyleng-1;\
+//     yycolumn+=yyleng;
 
+// %option reentrant
+// %option noyywrap
+// %option bison-bridge
 
 #define RETURN_TOKEN(token) debug_printf("%s\n",#token);return token
-
 %}
 
 /* Tokens for C--*/
-%option noyywrap
-%option bison-bridge
-%option reentrant
+%option yylineno
 
-WHITE_SPACE         [\s]
+
+WHITE_SPACE         [ \s]
 DIGIT               [0-9]
 LETTER              [a-zA-Z_]
 DOT                 \.
@@ -46,59 +50,68 @@ OCT                 [0-7]
 
 %%
 
-{WHITE_SPACE}+      ;// ignore white space
-\n                  ;// ignore new line
+{WHITE_SPACE}+                  ;// ignore white space
+\n                              ;// ignore new line
 0{OCT}*                         |
 0[Xx]{HEX}+                     |
-[1-9]{DIGIT}*                   yylval->number=atoi(yytext);RETURN_TOKEN(INT);
+[1-9]{DIGIT}*                   {
+    // yylval->number=atoi(yytext);
+    RETURN_TOKEN(INT);
+}
 {DIGIT}*{DOT}{DIGIT}*[Ee][+-]?{DIGIT}+     |
-(0|[1-9]{DIGIT}*){DOT}{DIGIT}+             yylval->number=atof(yytext);RETURN_TOKEN(FLOAT);
-{LETTER}[{LETTER}{DIGIT}]*      yylval->string=yytext;RETURN_TOKEN(ID);
-";"                             RETURN_TOKEN(SEMI);
-","                             RETURN_TOKEN(COMMA);
-"="                             RETURN_TOKEN(ASSIGNUP);
+(0|[1-9]{DIGIT}*){DOT}{DIGIT}+             {
+    // yylval->number=atof(yytext);
+    RETURN_TOKEN(FLOAT);
+}
+{LETTER}[{LETTER}{DIGIT}]*      {
+    // yylval->string=yytext;
+    RETURN_TOKEN(ID);
+}
+";"                             {RETURN_TOKEN(SEMI);}
+","                             {RETURN_TOKEN(COMMA);}
+"="                             {RETURN_TOKEN(ASSIGNOP);}
 "<"                             |
 ">"                             |
 "<="                            |
 ">="                            |
 "=="                            |
-"!="                            RETURN_TOKEN(RELOP);
-"+"                             RETURN_TOKEN(PLUS);
-"-"                             RETURN_TOKEN(MINUS);
-"*"                             RETURN_TOKEN(STAR);
-"/"                             RETURN_TOKEN(DIV);
-&&                              RETURN_TOKEN(AND);
-\|\|                            RETURN_TOKEN(OR);
-{DOT}                           RETURN_TOKEN(DOT);
-!                               RETURN_TOKEN(NOT);
-[int|float]                     RETURN_TOKEN(TYPE);
-"("                             RETURN_TOKEN(LP);
-")"                             RETURN_TOKEN(RP);
-\[                              RETURN_TOKEN(LB);
-]                               RETURN_TOKEN(RB);
-\{                              RETURN_TOKEN(LC);
-"}"                             RETURN_TOKEN(RC);
-struct                          RETURN_TOKEN(STRUCT);
-return                          RETURN_TOKEN(RETURN);
-if                              RETURN_TOKEN(IF);
-else                            RETURN_TOKEN(ELSE);
-while                           RETURN_TOKEN(WHILE);
+"!="                            {RETURN_TOKEN(RELOP);}
+"+"                             {RETURN_TOKEN(PLUS);}
+"-"                             {RETURN_TOKEN(MINUS);}
+"*"                             {RETURN_TOKEN(STAR);}
+"/"                             {RETURN_TOKEN(DIV);}
+"&&"                            {RETURN_TOKEN(AND);}
+"\|\|"                          {RETURN_TOKEN(OR);}
+{DOT}                           {RETURN_TOKEN(DOT);}
+"!"                             {RETURN_TOKEN(NOT);}
+"[int|float]"                   {RETURN_TOKEN(TYPE);}
+"("                             {RETURN_TOKEN(LP);}
+")"                             {RETURN_TOKEN(RP);}
+"\["                            {RETURN_TOKEN(LB);}
+"]"                             {RETURN_TOKEN(RB);}
+"\{"                            {RETURN_TOKEN(LC);}
+"}"                             {RETURN_TOKEN(RC);}
+"struct"                        {RETURN_TOKEN(STRUCT);}
+"return"                        {RETURN_TOKEN(RETURN);}
+"if"                            {RETURN_TOKEN(IF);}
+"else"                          {RETURN_TOKEN(ELSE);}
+"while"                         {RETURN_TOKEN(WHILE);}
 "//"                            {
     // RETURN_TOKEN(LINECOMMENT);
-    char c = yylex();
+    char c = input();
     while (c != EOF) {
         if (c == '\n') {
             break;
         }
-        c = yylex();
+        c = input();
     }
 }
 "/\*"                           {
     // RETURN_TOKEN(BLOCKCOMMENT);
-    char c = yylex();
+    char c = input();
     while(1) {
         if (c == '*') {
-            c = yylex();
+            c = input();
             if (c == '/') {
                 break;
             }else{
@@ -110,7 +123,7 @@ while                           RETURN_TOKEN(WHILE);
             }
             break;
         }
-        c = yylex();
+        c = input();
     }
     return yytext[0];
 }
@@ -121,17 +134,23 @@ while                           RETURN_TOKEN(WHILE);
     return yytext[0];
 }
 .                               {
-    printf("Unknown character [%c]\n",yytext[0]);   
+    printf("Error type A at Line %d: Undefined token \"%s\".\n", yylineno, yytext);   
     return yytext[0];
 }
 
 %% 
 
-void scan_string(const char *str, yyscan_t scanner) {
-  yy_switch_to_buffer(yy_scan_string(str, scanner), scanner);
-}
+// void scan_string(const char *str, yyscan_t scanner) {
+//     yy_switch_to_buffer(yy_scan_string(str, scanner), scanner);
+// }
 
-int main(void)
-{
+int main(int argc, char** argv) {
+    if (argc > 1) {
+        if (!(yyin = fopen(argv[1], "r"))) {
+            perror(argv[1]);
+            return 1;
+        }
+    }
+    while (yylex() != 0);
     return 0;
 }

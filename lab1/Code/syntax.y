@@ -10,12 +10,19 @@
 #define MAX_NUM_LEN 32
 #define MAX_ERR_NUM 1e4
 
+#ifdef E_PARSE_DEBUG
+// Some yacc (bison) defines
+#define YYDEBUG 1       // Generate debug code; needed for YYERROR_VERBOSE
+#define YYERROR_VERBOSE // Give a more specific parse error message 
+#endif
+
 int yylex();
 int yyerror(char *s);
 int yyparse();
 int yywrap();
 
 size_t yylineno;
+
 
 FILE *yyin;
 // out is not used
@@ -35,12 +42,6 @@ struct Error errors[MAX_ERR_NUM];
 int errorCount = 0;
 int errorLineno = 0;
 char errorChar = '\0';
-
-// int yylex(){
-//     char c[2];
-//     fgets(c, 2, yyin);
-//     return c[0];
-// }
 
 int isNewError(int errorLineno, const char errorChar) {
     for (int i = 0; i < errorCount; i++) {
@@ -96,6 +97,7 @@ int yyerror(char *s) {
         RETURN
         IF
         ELSE
+        WHILE
 
 %union {
     char *string;
@@ -103,6 +105,11 @@ int yyerror(char *s) {
     float floats;
     char *position;
 }
+
+%type <string> ID
+%type <number> INT
+%type <floats> FLOAT
+%type <position> TYPE
 
 %%
 
