@@ -10,18 +10,12 @@
 #define MAX_NUM_LEN 32
 #define MAX_ERR_NUM 1e4
 
-#ifdef E_PARSE_DEBUG
-// Some yacc (bison) defines
-#define YYDEBUG 1       // Generate debug code; needed for YYERROR_VERBOSE
-#define YYERROR_VERBOSE // Give a more specific parse error message 
-#endif
+int yyerror(size_t err_line, const char err_char);
 
-int yylex();
-int yyerror(char *s);
-int yyparse();
-int yywrap();
-
-size_t yylineno;
+extern int yylex();
+extern int yyparse();
+extern int yywrap();
+extern size_t yylineno;
 
 
 FILE *yyin;
@@ -35,7 +29,7 @@ int isNewError(int errorLineno, const char errorChar);
 
 struct Error {
     int lineno;
-    char character;
+    const char character;
 };
 
 struct Error errors[MAX_ERR_NUM];
@@ -56,11 +50,12 @@ int yywrap() {
     return 1;
 }
 
-int yyerror(char *s) {
-    if (isNewError(errorLineno, errorChar)) {
-        errors[errorCount].lineno = errorLineno;
-        errors[errorCount].character = errorChar;
+int yyerror(size_t err_line, const char err_char) {
+    if (isNewError(err_line, err_char)) {
+        errors[errorCount].lineno = err_line;
+        errors[errorCount].character = err_char;
         errorCount++;
+        return 1;
     }
     return 0;
 }
@@ -106,10 +101,12 @@ int yyerror(char *s) {
     char *position;
 }
 
-%type <string> ID
+/* %type <string> ID
 %type <number> INT
 %type <floats> FLOAT
-%type <position> TYPE
+%type <position> TYPE */
+
+
 
 %%
 
@@ -131,12 +128,6 @@ command
 
 %%
 
-int yylex() {
-    char c[2];
-    fgets(c, 2, yyin);
-    return c[0];
-}
-
 int yyparse() {
     yyscan_t scanner;
     yylex_init(&scanner);
@@ -148,14 +139,15 @@ int yyparse() {
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
-        printf("Usage: %s filename, please try again with a filename as the argument to the program (e.g. %s test.c) \r \n", argv[0], argv[0]);
+        printf("Usage: %s filename, please try again with a filename as the argument to the program (e.g. test.cmm) \r \n", argv[0]);
         return 1;
     }
     yyin = fopen(argv[1], "r");
-    if (yyin == NULL) {
+    if (!yyin) {
         printf("Error: Could not open file %s \r \n", argv[1]);
         return 1;
     }
+    yyrestart(yyin);
     yyparse();
     fclose(yyin);
     return 0;

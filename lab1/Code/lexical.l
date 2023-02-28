@@ -11,9 +11,7 @@
 
 // extern int atoi();
 // extern float atof();
-int isNewError(int errorLineno, const char errorChar){
-    return 1;
-}
+extern int yyerror(size_t err_line, char err_char);
 
 // #define YYDEBUG 1
 
@@ -52,21 +50,6 @@ OCT                 [0-7]
 
 {WHITE_SPACE}+                  ;// ignore white space
 \n                              ;// ignore new line
-0{OCT}*                         |
-0[Xx]{HEX}+                     |
-[1-9]{DIGIT}*                   {
-    // yylval->number=atoi(yytext);
-    RETURN_TOKEN(INT);
-}
-{DIGIT}*{DOT}{DIGIT}*[Ee][+-]?{DIGIT}+     |
-(0|[1-9]{DIGIT}*){DOT}{DIGIT}+             {
-    // yylval->number=atof(yytext);
-    RETURN_TOKEN(FLOAT);
-}
-{LETTER}[{LETTER}{DIGIT}]*      {
-    // yylval->string=yytext;
-    RETURN_TOKEN(ID);
-}
 ";"                             {RETURN_TOKEN(SEMI);}
 ","                             {RETURN_TOKEN(COMMA);}
 "="                             {RETURN_TOKEN(ASSIGNOP);}
@@ -84,7 +67,9 @@ OCT                 [0-7]
 "\|\|"                          {RETURN_TOKEN(OR);}
 {DOT}                           {RETURN_TOKEN(DOT);}
 "!"                             {RETURN_TOKEN(NOT);}
-"[int|float]"                   {RETURN_TOKEN(TYPE);}
+int|float                     {
+    printf("TYPE: %s\n", yytext);
+    RETURN_TOKEN(TYPE);}
 "("                             {RETURN_TOKEN(LP);}
 ")"                             {RETURN_TOKEN(RP);}
 "\["                            {RETURN_TOKEN(LB);}
@@ -96,6 +81,25 @@ OCT                 [0-7]
 "if"                            {RETURN_TOKEN(IF);}
 "else"                          {RETURN_TOKEN(ELSE);}
 "while"                         {RETURN_TOKEN(WHILE);}
+
+0{OCT}*                         |
+0[Xx]{HEX}+                     |
+[1-9]{DIGIT}*                   {
+    yylval->number=atoi(yytext);
+    RETURN_TOKEN(INT);
+}
+{DIGIT}*{DOT}{DIGIT}*[Ee][+-]?{DIGIT}+     |
+(0|[1-9]{DIGIT}*){DOT}{DIGIT}+             {
+    // yylval->number=atof(yytext);
+    printf("FLOAT: %s\n", yytext);
+    RETURN_TOKEN(FLOAT);
+}
+{LETTER}({LETTER}|{DIGIT})*     {
+    // yylval->string=yytext;
+    printf("ID: %s\n", yytext);
+    RETURN_TOKEN(ID);
+}
+
 "//"                            {
     // RETURN_TOKEN(LINECOMMENT);
     char c = input();
@@ -118,7 +122,7 @@ OCT                 [0-7]
                 unput(c);
             }
         }else if (c == EOF) {
-            if(isNewError(yylineno, yytext[0])){
+            if(yyerror(yylineno, 'B')){
                 printf("Error type B at Line %d: Block comment is not closed.\n", yylineno);
             }
             break;
@@ -128,29 +132,31 @@ OCT                 [0-7]
     return yytext[0];
 }
 "\*/"                           {
-    if(isNewError(yylineno, yytext[0])){
+    if(yyeError(yylineno, 'B')){
         printf("Error type B at Line %d: Block comment is not closed.\n", yylineno);
     }
     return yytext[0];
 }
 .                               {
-    printf("Error type A at Line %d: Undefined token \"%s\".\n", yylineno, yytext);   
+    if(yyerror(yylineno, 'A')){
+        printf("Error type A at Line %d: Undefined token \"%s\".\n", yylineno, yytext);
+    }
     return yytext[0];
 }
 
 %% 
 
-// void scan_string(const char *str, yyscan_t scanner) {
-//     yy_switch_to_buffer(yy_scan_string(str, scanner), scanner);
-// }
-
-int main(int argc, char** argv) {
-    if (argc > 1) {
-        if (!(yyin = fopen(argv[1], "r"))) {
-            perror(argv[1]);
-            return 1;
-        }
-    }
-    while (yylex() != 0);
-    return 0;
+void scan_string(const char *str, yyscan_t scanner) {
+    yy_switch_to_buffer(yy_scan_string(str, scanner), scanner);
 }
+
+// int main(int argc, char** argv) {
+//     if (argc > 1) {
+//         if (!(yyin = fopen(argv[1], "r"))) {
+//             perror(argv[1]);
+//             return 1;
+//         }
+//     }
+//     while (yylex() != 0);
+//     return 0;
+// }
