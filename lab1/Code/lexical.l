@@ -6,14 +6,9 @@
 
 #include "syntax.tab.h"
 
-// int yycolumn;
-// extern bool is_error;
+extern yylval;
 
-// extern int atoi();
-// extern float atof();
 extern int yyerror(size_t err_line, char err_char);
-
-// #define YYDEBUG 1
 
 #if YYDEBUG > 0
 #define debug_printf  printf
@@ -21,11 +16,12 @@ extern int yyerror(size_t err_line, char err_char);
 #define debug_printf(...)
 #endif // YYDEBUG
 
-// #define YY_USER_ACTION\
-//     yylloc.first_line=yylloc.last_line=yylineno;\
-//     yylloc.first_column=yycolumn;\
-//     yylloc.last_column=yycolumn+yyleng-1;\
-//     yycolumn+=yyleng;
+int yycolumn = 1;
+#define YY_USER_ACTION\
+    yylloc.first_line=yylloc.last_line=yylineno;\
+    yylloc.first_column=yycolumn;\
+    yylloc.last_column=yycolumn+yyleng-1;\
+    yycolumn+=yyleng;
 
 // %option reentrant
 // %option noyywrap
@@ -49,7 +45,7 @@ OCT                 [0-7]
 %%
 
 {WHITE_SPACE}+                  ;// ignore white space
-\n                              ;// ignore new line
+\n                              {yycolumn = 1;}
 ";"                             {RETURN_TOKEN(SEMI);}
 ","                             {RETURN_TOKEN(COMMA);}
 "="                             {RETURN_TOKEN(ASSIGNOP);}
@@ -85,18 +81,18 @@ int|float                     {
 0{OCT}*                         |
 0[Xx]{HEX}+                     |
 [1-9]{DIGIT}*                   {
-    yylval->number=atoi(yytext);
+    yylval.number=atoi(yytext);
     RETURN_TOKEN(INT);
 }
 {DIGIT}*{DOT}{DIGIT}*[Ee][+-]?{DIGIT}+     |
 (0|[1-9]{DIGIT}*){DOT}{DIGIT}+             {
-    // yylval->number=atof(yytext);
-    printf("FLOAT: %s\n", yytext);
+    yylval.floats=atof(yytext);
+    // printf("FLOAT: %s\n", yytext);
     RETURN_TOKEN(FLOAT);
 }
 {LETTER}({LETTER}|{DIGIT})*     {
-    // yylval->string=yytext;
-    printf("ID: %s\n", yytext);
+    yylval.string=yytext;
+    // printf("ID: %s\n", yytext);
     RETURN_TOKEN(ID);
 }
 
@@ -132,7 +128,7 @@ int|float                     {
     return yytext[0];
 }
 "\*/"                           {
-    if(yyeError(yylineno, 'B')){
+    if(yyerror(yylineno, 'B')){
         printf("Error type B at Line %d: Block comment is not closed.\n", yylineno);
     }
     return yytext[0];
@@ -145,10 +141,6 @@ int|float                     {
 }
 
 %% 
-
-void scan_string(const char *str, yyscan_t scanner) {
-    yy_switch_to_buffer(yy_scan_string(str, scanner), scanner);
-}
 
 // int main(int argc, char** argv) {
 //     if (argc > 1) {

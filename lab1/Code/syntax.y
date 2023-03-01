@@ -10,23 +10,6 @@
 #define MAX_NUM_LEN 32
 #define MAX_ERR_NUM 1e4
 
-int yyerror(size_t err_line, const char err_char);
-
-extern int yylex();
-extern int yyparse();
-extern int yywrap();
-extern size_t yylineno;
-
-
-FILE *yyin;
-// out is not used
-// we use printf instead
-// FILE *yyout;
-
-char *yytext;
-
-int isNewError(int errorLineno, const char errorChar);
-
 struct Error {
     int lineno;
     const char character;
@@ -37,39 +20,34 @@ int errorCount = 0;
 int errorLineno = 0;
 char errorChar = '\0';
 
-int isNewError(int errorLineno, const char errorChar) {
-    for (int i = 0; i < errorCount; i++) {
-        if (errors[i].lineno == errorLineno && errors[i].character == errorChar) {
-            return 0;
-        }
-    }
-    return 1;
-}
+int yyerror(size_t err_line, const char err_char);
+int isNewError(int errorLineno, const char errorChar);
 
-int yywrap() {
-    return 1;
-}
+extern int yylex();
+extern int yyparse();
+int yywrap();
+extern size_t yylineno;
 
-int yyerror(size_t err_line, const char err_char) {
-    if (isNewError(err_line, err_char)) {
-        errors[errorCount].lineno = err_line;
-        errors[errorCount].character = err_char;
-        errorCount++;
-        return 1;
-    }
-    return 0;
-}
+
+FILE *yyin;
+// out is not used
+// we use printf instead
+// FILE *yyout;
+
+char *yytext;
 %}
 
+%union {
+    char    *string;
+    int     number;
+    float   floats;
+}
 
 %define api.pure full
 %lex-param { yyscan_t scanner }
 %parse-param { void *scanner }
 
-%token  INT
-        FLOAT
-        ID
-        SEMI
+%token  SEMI
         COMMA
         ASSIGNOP
         RELOP
@@ -94,35 +72,25 @@ int yyerror(size_t err_line, const char err_char) {
         ELSE
         WHILE
 
-%union {
-    char *string;
-    int number;
-    float floats;
-    char *position;
-}
+%token <number> INT
+%token <floats> FLOAT
+%token <string> ID
 
-/* %type <string> ID
-%type <number> INT
-%type <floats> FLOAT
-%type <position> TYPE */
+// precedence and associativity
 
-
+%right ASSIGNOP
+%left OR
+%left AND
+%left RELOP
+%left PLUS MINUS
+%left STAR DIV
+%right NOT
+%left DOT
+%left LB RB
+%left LP RP
+%nonassoc ELSE
 
 %%
-
-commands
-    : command SEMI commands
-    | command SEMI
-    | error SEMI commands
-    | error SEMI
-    ;
-
-command
-    : 
-    | ID LP RP
-    ;
-
-/* exit: EXIT; */
 
 
 
@@ -135,6 +103,29 @@ int yyparse() {
     yyparse(scanner);
     yylex_destroy(scanner);
     return 0;
+}
+
+int yyerror(size_t err_line, const char err_char) {
+    if (isNewError(err_line, err_char)) {
+        errors[errorCount].lineno = err_line;
+        errors[errorCount].character = err_char;
+        errorCount++;
+        return 1;
+    }
+    return 0;
+}
+
+int isNewError(int errorLineno, const char errorChar) {
+    for (int i = 0; i < errorCount; i++) {
+        if (errors[i].lineno == errorLineno && errors[i].character == errorChar) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int yywrap() {
+    return 1;
 }
 
 int main(int argc, char *argv[]) {
