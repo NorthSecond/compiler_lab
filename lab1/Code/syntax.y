@@ -92,6 +92,213 @@ char *yytext;
 
 %%
 
+// High-level Definitions
+
+Program : ExtDefList {
+    printf("Program parsed successfully \r \n");
+    printf("Total lines: %d \r \n", yylineno);
+    printf("Total errors: %d \r \n", errorCount);
+    for (int i = 0; i < errorCount; i++) {
+        printf("Error %d: Line %d, character %c \r \n", i + 1, errors[i].lineno, errors[i].character);
+    }
+}
+
+ExtDefList : ExtDef ExtDefList {
+    printf("Ext_def_list parsed successfully \r \n");
+} 
+| {
+    printf("Ext_def_list parsed successfully \r \n");
+}
+
+ExtDef : Specifier ExtDecList SEMI {
+    printf("Ext_def parsed successfully \r \n");
+}
+| Specifier SEMI {
+    printf("Ext_def parsed successfully \r \n");
+}
+| Specifier FunDec CompSt {
+    printf("Ext_def parsed successfully \r \n");
+}
+
+ExtDecList : VarDec {
+    printf("Ext_dec_list parsed successfully \r \n");
+}
+| VarDec COMMA ExtDecList {
+    printf("Ext_dec_list parsed successfully \r \n");
+}
+
+// Specifiers
+Specifier : TYPE {
+    printf("Specifier parsed successfully \r \n");
+}
+| StructSpecifier {
+    printf("Specifier parsed successfully \r \n");
+}
+
+StructSpecifier : STRUCT OptTag LC DefList RC {
+    printf("Struct_specifier parsed successfully \r \n");
+}
+| STRUCT Tag {
+    printf("Struct_specifier parsed successfully \r \n");
+}
+
+OptTag : ID {
+    printf("Opt_tag parsed successfully \r \n");
+}
+| {
+    printf("Opt_tag parsed successfully \r \n");
+}
+
+Tag : ID {
+    printf("Tag parsed successfully \r \n");
+}
+
+// Declarators
+VarDec : ID {
+    printf("Var_dec parsed successfully \r \n");
+}
+| VarDec LB INT RB {
+    printf("Var_dec parsed successfully \r \n");
+}
+
+FunDec : ID LP VarList RP {
+    printf("Fun_dec parsed successfully \r \n");
+}
+| ID LP RP {
+    printf("Fun_dec parsed successfully \r \n");
+}
+
+VarList : ParamDec COMMA VarList {
+    printf("Var_list parsed successfully \r \n");
+}
+| ParamDec {
+    printf("Var_list parsed successfully \r \n");
+}
+
+ParamDec : Specifier VarDec {
+    printf("Param_dec parsed successfully \r \n");
+}
+
+// Statements
+CompSt : LC DefList StmtList RC {
+    printf("Comp_st parsed successfully \r \n");
+}
+
+StmtList : Stmt StmtList {
+    printf("Stmt_list parsed successfully \r \n");
+}
+| {
+    printf("Stmt_list parsed successfully \r \n");
+}
+
+Stmt : Exp SEMI {
+    printf("Stmt parsed successfully \r \n");
+}
+| CompSt {
+    printf("Stmt parsed successfully \r \n");
+}
+| RETURN Exp SEMI {
+    printf("Stmt parsed successfully \r \n");
+}
+| IF LP Exp RP Stmt {
+    printf("Stmt parsed successfully \r \n");
+}
+| IF LP Exp RP Stmt ELSE Stmt {
+    printf("Stmt parsed successfully \r \n");
+}
+| WHILE LP Exp RP Stmt {
+    printf("Stmt parsed successfully \r \n");
+}
+
+// Local Definitions
+DefList : Def DefList {
+    printf("Def_list parsed successfully \r \n");
+}
+| {
+    printf("Def_list parsed successfully \r \n");
+}
+
+Def : Specifier DecList SEMI {
+    printf("Def parsed successfully \r \n");
+}
+
+DecList : Dec {
+    printf("Dec_list parsed successfully \r \n");
+}
+| Dec COMMA DecList {
+    printf("Dec_list parsed successfully \r \n");
+}
+
+Dec : VarDec {
+    printf("Dec parsed successfully \r \n");
+}
+| VarDec ASSIGNOP Exp {
+    printf("Dec parsed successfully \r \n");
+}
+
+// Expressions
+Exp : Exp ASSIGNOP Exp {
+    printf("Exp parsed successfully \r \n");
+}
+| Exp AND Exp {
+    printf("Exp parsed successfully \r \n");
+}
+| Exp OR Exp {
+    printf("Exp parsed successfully \r \n");
+}
+| Exp RELOP Exp {
+    printf("Exp parsed successfully \r \n");
+}
+| Exp PLUS Exp {
+    printf("Exp parsed successfully \r \n");
+}
+| Exp MINUS Exp {
+    printf("Exp parsed successfully \r \n");
+}
+| Exp STAR Exp {
+    printf("Exp parsed successfully \r \n");
+}
+| Exp DIV Exp {
+    printf("Exp parsed successfully \r \n");
+}
+| LP Exp RP {
+    printf("Exp parsed successfully \r \n");
+}
+| MINUS Exp {
+    printf("Exp parsed successfully \r \n");
+}
+| NOT Exp {
+    printf("Exp parsed successfully \r \n");
+}
+| ID LP Args RP {
+    printf("Exp parsed successfully \r \n");
+}
+| ID LP RP {
+    printf("Exp parsed successfully \r \n");
+}
+| Exp LB Exp RB {
+    printf("Exp parsed successfully \r \n");
+}
+| Exp DOT ID {
+    printf("Exp parsed successfully \r \n");
+}
+| ID {
+    printf("Exp parsed successfully \r \n");
+}
+| INT {
+    printf("Exp parsed successfully \r \n");
+}
+| FLOAT {
+    printf("Exp parsed successfully \r \n");
+}
+
+
+Args : Exp COMMA Args {
+    printf("Args parsed successfully \r \n");
+}
+| Exp {
+    printf("Args parsed successfully \r \n");
+}
 
 
 %%
