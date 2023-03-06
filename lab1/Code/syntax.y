@@ -35,6 +35,58 @@ FILE *yyin;
 // FILE *yyout;
 
 char *yytext;
+
+// 语法树的定义
+// 语法树是多叉树
+// 对应行号 子节点数量 子节点指针
+typedef struct SyntaxTreeNode
+{
+    char *name;
+    struct SyntaxTreeNode *child;
+    struct SyntaxTreeNode *sibling;
+    
+} SyntaxTree;
+
+// 语法树的创建
+SyntaxTree *createSyntaxTree(char *name, SyntaxTree *child, SyntaxTree *sibling)
+{
+    SyntaxTree *node = (SyntaxTree *)malloc(sizeof(SyntaxTree));
+    node->name = name;
+    node->child = child;
+    node->sibling = sibling;
+    return node;
+}
+
+// 语法树的遍历
+// 这里使用先序遍历
+// 考虑一下要不要放这里 还是换个位置提出来到别的文件里面
+void traverseSyntaxTree(SyntaxTree *root, int depth)
+{
+    if (root == NULL)
+    {
+        return;
+    }
+    for (int i = 0; i < depth; i++)
+    {
+        printf("  ");
+    }
+    printf("%s\r \n", root->name);
+    traverseSyntaxTree(root->child, depth + 1);
+    traverseSyntaxTree(root->sibling, depth);
+}
+
+// 语法树的销毁
+void destroySyntaxTree(SyntaxTree *root)
+{
+    if (root == NULL)
+    {
+        return;
+    }
+    destroySyntaxTree(root->child);
+    destroySyntaxTree(root->sibling);
+    free(root);
+}
+
 %}
 
 %union {
