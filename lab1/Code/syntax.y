@@ -36,44 +36,112 @@ FILE *yyin;
 
 char *yytext;
 
+enum class SyntexTreeNodeType { 
+    // 没有产生 e 的语法单元
+    NONEPSILON,
+    // 产生 e 的语法单元
+    EPSILON,
+    // 词法单元ID
+    ID,
+    // 词法单元TYPE
+    TYPE,
+    // 词法单元INT
+    INT,
+    // 词法单元FLOAT
+    FLOAT
+};
+
 // 语法树的定义
 // 语法树是多叉树
 // 对应行号 子节点数量 子节点指针
 typedef struct SyntaxTreeNode
 {
     char *name;
+    enum SyntaxTreeNodeType type;
+    int lineno;
+    union {
+        int intVal;
+        float floatVal;
+        char *stringVal;
+    };
+    int childCount;
     struct SyntaxTreeNode *child;
     struct SyntaxTreeNode *sibling;
-    
 } SyntaxTree;
 
+// 全局变量 语法树的根节点
+Struct SyntaxTree *root = nullptr;
+
 // 语法树的创建
-SyntaxTree *createSyntaxTree(char *name, SyntaxTree *child, SyntaxTree *sibling)
+SyntaxTree *createSyntaxTree(char *name, enum SyntaxTreeNodeType type, int lineno)
 {
     SyntaxTree *node = (SyntaxTree *)malloc(sizeof(SyntaxTree));
     node->name = name;
-    node->child = child;
-    node->sibling = sibling;
+    node->type = type;
+    node->lineno = lineno;
+    node->childCount = 0;
+    node->child = NULL;
+    node->sibling = NULL;
     return node;
 }
 
 // 语法树的遍历
 // 这里使用先序遍历
-// 考虑一下要不要放这里 还是换个位置提出来到别的文件里面
-void traverseSyntaxTree(SyntaxTree *root, int depth)
+void traverseSyntaxTree(SyntaxTree *root, int indent)
 {
     if (root == NULL)
     {
         return;
     }
-    for (int i = 0; i < depth; i++)
+    for (int i = 0; i < indent; i++)
     {
         printf("  ");
     }
-    printf("%s\r \n", root->name);
-    traverseSyntaxTree(root->child, depth + 1);
-    traverseSyntaxTree(root->sibling, depth);
+    // 先序遍历
+    printf("%s (%d) \r \n", root->name, root->lineno);
+    traverseSyntaxTree(root->child, indent + 1);
+    traverseSyntaxTree(root->sibling, indent);
 }
+
+// 打印节点信息
+// 考虑一下要不要放这里 还是换个位置提出来到别的文件里面
+void printNodeInfo(SyntaxTree *node)
+{
+    if (node == NULL)
+    {
+        return;
+    }
+    switch (node->type)
+    {
+    case NONEPSILON:
+        // 打印语法单元的名称和对应在输入文件中的行号
+        printf("%s (%d) \r \n", node->name, node->lineno);
+        break;
+    case EPSILON:
+        // 无需打印语法单元对应的信息
+        // printf("%s (%d) \r \n", node->name, node->lineno);
+        break;
+    case ID:
+        // 额外打印对应的词素
+        printf("%s (%d): %s \r \n", node->name, node->lineno, node->stringVal);
+        break;
+    case TYPE:
+        // 额外打印对应的类型
+        printf("%s (%d): %s \r \n", node->name, node->lineno, node->stringVal);
+        break;
+    case INT:
+        // 额外打印对应的整数值
+        printf("%s (%d): %d \r \n", node->name, node->lineno, node->intVal);
+        break;
+    case FLOAT:
+        // 额外打印对应的浮点数值
+        printf("%s (%d): %f \r \n", node->name, node->lineno, node->floatVal);
+        break;
+    default:
+        break;
+    }
+}
+
 
 // 语法树的销毁
 void destroySyntaxTree(SyntaxTree *root)
@@ -87,18 +155,23 @@ void destroySyntaxTree(SyntaxTree *root)
     free(root);
 }
 
+// 语法树的插入
+// 对应多叉树的插入
+
 %}
 
 %union {
     char    *string;
     int     number;
     float   floats;
+    struct  SyntaxTreeNode *type_pnode;
 }
 
 %define api.pure full
 %lex-param { yyscan_t scanner }
 %parse-param { void *scanner }
 
+/* tokens */
 %token  SEMI
         COMMA
         ASSIGNOP
@@ -124,12 +197,14 @@ void destroySyntaxTree(SyntaxTree *root)
         ELSE
         WHILE
 
+/* numbers */
 %token <number> INT
 %token <floats> FLOAT
 %token <string> ID
 
-// precedence and associativity
+/* precedence and associativity */
 
+%nonassoc error
 %right ASSIGNOP
 %left OR
 %left AND
@@ -142,6 +217,28 @@ void destroySyntaxTree(SyntaxTree *root)
 %left LP RP
 %nonassoc ELSE
 
+/* non-terminals */
+%type <type_pnode> Program
+                   ExtDefList
+                   ExtDef
+                   Specifier
+                   ExtDecList  
+                   StructSpecifier
+                   OptTag
+                   Tag
+                   VarDec
+                   FunDec
+                   VarList
+                   ParamDec
+                   CompSt
+                   StmtList
+                   Stmt
+                   DefList
+                   Def
+                   DecList
+                   Dec
+                   Exp
+                   Args
 %%
 
 // High-level Definitions
@@ -153,6 +250,9 @@ Program : ExtDefList {
     for (int i = 0; i < errorCount; i++) {
         printf("Error %d: Line %d, character %c \r \n", i + 1, errors[i].lineno, errors[i].character);
     }
+} 
+| ExtDefList error {
+
 }
 
 ExtDefList : ExtDef ExtDefList {
