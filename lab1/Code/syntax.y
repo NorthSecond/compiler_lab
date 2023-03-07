@@ -745,119 +745,581 @@ CompSt : LC DefList StmtList RC {
 }
 
 StmtList : Stmt StmtList {
-    printf("Stmt_list parsed successfully \r \n");
+    SyntaxTreeNode* nodeStmtList = createNewNode("StmtList", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @1.first_line);
+
+    insertSyntaxTree(nodeStmt, nodeStmtList);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeStmtList);
+    insertSyntaxTree((SyntaxTreeNode*)$2, nodeStmtList);
+
+    $$ = nodeStmtList;
 }
 | {
-    printf("Stmt_list parsed successfully \r \n");
+    SyntaxTreeNode* nodeStmtList = createNewNode("StmtList", NONEPSILON, @$.first_line);
+
+    $$ = nodeStmtList;
 }
 
 Stmt : Exp SEMI {
-    printf("Stmt parsed successfully \r \n");
+    SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeSEMI = createNewNode("SEMI", NONVALUE, @2.first_line);
+
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeStmt);
+    insertSyntaxTree(nodeSEMI, nodeStmt);
+
+    $$ = nodeStmt;
 }
 | CompSt {
-    printf("Stmt parsed successfully \r \n");
+    SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
+
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeStmt);
+
+    $$ = nodeStmt;
 }
 | RETURN Exp SEMI {
-    printf("Stmt parsed successfully \r \n");
+    SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeRETURN = createNewNode("RETURN", NONVALUE, @1.first_line);
+    SyntaxTreeNode* nodeSEMI = createNewNode("SEMI", NONVALUE, @3.first_line);
+
+    insertSyntaxTree(nodeRETURN, nodeStmt);
+    insertSyntaxTree((SyntaxTreeNode*)$2, nodeStmt);
+    insertSyntaxTree(nodeSEMI, nodeStmt);
+
+    $$ = nodeStmt;
+}
+| RETURN Exp error {
+    if(isNewError(@3.first_line, 'B')){
+        errors[errorCount].lineno = yylineno;
+        errors[errorCount].character = 'B';
+        errorCount++;
+
+        printf("Error type B at Line %d: Missing \";\". \r \n", @3.first_line);
+
+        SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @3.first_line);
+        insertSyntaxTree((SyntaxTreeNode*)$2, nodeErr);
+
+        SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @3.first_line);
+        insertSyntaxTree(nodeErr, nodeStmt);
+
+        $$ = nodeStmt;
+    } else {
+        $$ = nullptr;
+    }
 }
 | IF LP Exp RP Stmt {
-    printf("Stmt parsed successfully \r \n");
+    SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeIF = createNewNode("IF", NONVALUE, @1.first_line);
+    SyntaxTreeNode* nodeLP = createNewNode("LP", NONVALUE, @2.first_line);
+    SyntaxTreeNode* nodeRP = createNewNode("RP", NONVALUE, @4.first_line);
+
+    insertSyntaxTree(nodeIF, nodeStmt);
+    insertSyntaxTree(nodeLP, nodeStmt);
+    insertSyntaxTree((SyntaxTreeNode*)$3, nodeStmt);
+    insertSyntaxTree(nodeRP, nodeStmt);
+    insertSyntaxTree((SyntaxTreeNode*)$5, nodeStmt);
+
+    $$ = nodeStmt;
+}
+| IF error Exp RP Stmt {
+    if(isNewError(@2.first_line, 'B')){
+        errors[errorCount].lineno = yylineno;
+        errors[errorCount].character = 'B';
+        errorCount++;
+
+        printf("Error type B at Line %d: Missing \"(\". \r \n", @2.first_line);
+
+        SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @2.first_line);
+        insertSyntaxTree((SyntaxTreeNode*)$3, nodeErr);
+
+        SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @2.first_line);
+        insertSyntaxTree(nodeErr, nodeStmt);
+
+        $$ = nodeStmt;
+    } else {
+        $$ = nullptr;
+    }
+}
+| IF LP Exp error Stmt {
+    if(isNewError(@4.first_line, 'B')){
+        errors[errorCount].lineno = yylineno;
+        errors[errorCount].character = 'B';
+        errorCount++;
+
+        printf("Error type B at Line %d: Missing \")\". \r \n", @4.first_line);
+
+        SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @4.first_line);
+        insertSyntaxTree((SyntaxTreeNode*)$3, nodeErr);
+
+        SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @4.first_line);
+        insertSyntaxTree(nodeErr, nodeStmt);
+
+        $$ = nodeStmt;
+    } else {
+        $$ = nullptr;
+    }
 }
 | IF LP Exp RP Stmt ELSE Stmt {
-    printf("Stmt parsed successfully \r \n");
+    SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeIF = createNewNode("IF", NONVALUE, @1.first_line);
+    SyntaxTreeNode* nodeLP = createNewNode("LP", NONVALUE, @2.first_line);
+    SyntaxTreeNode* nodeRP = createNewNode("RP", NONVALUE, @4.first_line);
+    SyntaxTreeNode* nodeELSE = createNewNode("ELSE", NONVALUE, @6.first_line);
+
+    insertSyntaxTree(nodeIF, nodeStmt);
+    insertSyntaxTree(nodeLP, nodeStmt);
+    insertSyntaxTree((SyntaxTreeNode*)$3, nodeStmt);
+    insertSyntaxTree(nodeRP, nodeStmt);
+    insertSyntaxTree((SyntaxTreeNode*)$5, nodeStmt);
+    insertSyntaxTree(nodeELSE, nodeStmt);
+    insertSyntaxTree((SyntaxTreeNode*)$7, nodeStmt);
+
+    $$ = nodeStmt;
+}
+| IF LP Exp RP Stmt ELSE error {
+    if(isNewError(@7.first_line, 'B')){
+        errors[errorCount].lineno = yylineno;
+        errors[errorCount].character = 'B';
+        errorCount++;
+
+        printf("Error type B at Line %d: Syntax error after \"else\". \r \n", @7.first_line);
+
+        SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @7.first_line);
+
+        SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @7.first_line);
+        insertSyntaxTree(nodeErr, nodeStmt);
+
+        $$ = nodeStmt;
+    } else {
+        $$ = nullptr;
+    }
 }
 | WHILE LP Exp RP Stmt {
-    printf("Stmt parsed successfully \r \n");
+    SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeWHILE = createNewNode("WHILE", NONVALUE, @1.first_line);
+    SyntaxTreeNode* nodeLP = createNewNode("LP", NONVALUE, @2.first_line);
+    SyntaxTreeNode* nodeRP = createNewNode("RP", NONVALUE, @4.first_line);
+
+    insertSyntaxTree(nodeWHILE, nodeStmt);
+    insertSyntaxTree(nodeLP, nodeStmt);
+    insertSyntaxTree((SyntaxTreeNode*)$3, nodeStmt);
+    insertSyntaxTree(nodeRP, nodeStmt);
+    insertSyntaxTree((SyntaxTreeNode*)$5, nodeStmt);
+
+    $$ = nodeStmt;
+}
+| WHILE error Exp RP Stmt {
+    if(isNewError(@2.first_line, 'B')){
+        errors[errorCount].lineno = yylineno;
+        errors[errorCount].character = 'B';
+        errorCount++;
+
+        printf("Error type B at Line %d: Missing \"(\". \r \n", @2.first_line);
+
+        SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @2.first_line);
+        insertSyntaxTree((SyntaxTreeNode*)$3, nodeErr);
+
+        SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @2.first_line);
+        insertSyntaxTree(nodeErr, nodeStmt);
+
+        $$ = nodeStmt;
+    } else {
+        $$ = nullptr;
+    }
+}
+| WHILE LP Exp error Stmt {
+    if(isNewError(@4.first_line, 'B')){
+        errors[errorCount].lineno = yylineno;
+        errors[errorCount].character = 'B';
+        errorCount++;
+
+        printf("Error type B at Line %d: Missing \")\". \r \n", @4.first_line);
+
+        SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @4.first_line);
+        insertSyntaxTree((SyntaxTreeNode*)$3, nodeErr);
+
+        SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @4.first_line);
+        insertSyntaxTree(nodeErr, nodeStmt);
+
+        $$ = nodeStmt;
+    } else {
+        $$ = nullptr;
+    }
+}
+| WHILE LP Exp RP Stmt error {
+    if(isNewError(@6.first_line, 'B')){
+        errors[errorCount].lineno = yylineno;
+        errors[errorCount].character = 'B';
+        errorCount++;
+
+        printf("Error type B at Line %d: Syntax error after \"while\". \r \n", @6.first_line);
+
+        SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @6.first_line);
+
+        SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @6.first_line);
+        insertSyntaxTree(nodeErr, nodeStmt);
+
+        $$ = nodeStmt;
+    } else {
+        $$ = nullptr;
+    }
 }
 
 // Local Definitions
 DefList : Def DefList {
-    printf("Def_list parsed successfully \r \n");
+    SyntaxTreeNode* nodeDefList = createNewNode("DefList", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeDefList);
+    insertSyntaxTree((SyntaxTreeNode*)$2, nodeDefList);
+
+    $$ = nodeDefList;
 }
 | {
-    printf("Def_list parsed successfully \r \n");
+    SyntaxTreeNode* nodeDefList = createNewNode("DefList", NONEPSILON, @$.first_line);
+    
+    $$ = nodeDefList;
 }
 
 Def : Specifier DecList SEMI {
-    printf("Def parsed successfully \r \n");
+    SyntaxTreeNode* nodeDef = createNewNode("Def", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeDef);
+    insertSyntaxTree((SyntaxTreeNode*)$2, nodeDef);
+    SyntaxTreeNode* nodeSEMI = createNewNode("SEMI", NONVALUE, @3.first_line);
+    insertSyntaxTree(nodeSEMI, nodeDef);
+
+    $$ = nodeDef;
 }
 
 DecList : Dec {
-    printf("Dec_list parsed successfully \r \n");
+    SyntaxTreeNode* nodeDecList = createNewNode("DecList", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeDecList);
+
+    $$ = nodeDecList;
 }
 | Dec COMMA DecList {
-    printf("Dec_list parsed successfully \r \n");
+    SyntaxTreeNode* nodeDecList = createNewNode("DecList", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeDecList);
+    SyntaxTreeNode* nodeCOMMA = createNewNode("COMMA", NONVALUE, @2.first_line);
+    insertSyntaxTree(nodeCOMMA, nodeDecList);
+    insertSyntaxTree((SyntaxTreeNode*)$3, nodeDecList);
+
+    $$ = nodeDecList;
+}
+| Dec error DecList {
+    if(isNewError(@2.first_line, 'B')){
+        errors[errorCount].lineno = yylineno;
+        errors[errorCount].character = 'B';
+        errorCount++;
+
+        printf("Error type B at Line %d: Missing \",\". \r \n", @2.first_line);
+
+        SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @2.first_line);
+        insertSyntaxTree((SyntaxTreeNode*)$1, nodeErr);
+        insertSyntaxTree((SyntaxTreeNode*)$3, nodeErr);
+
+        SyntaxTreeNode* nodeDecList = createNewNode("DecList", NONEPSILON, @2.first_line);
+        insertSyntaxTree(nodeErr, nodeDecList);
+
+        $$ = nodeDecList;
+    } else {
+        $$ = nullptr;
+    }
+}
+| Dec COMMA error {
+    if(isNewError(@3.first_line, 'B')){
+        errors[errorCount].lineno = yylineno;
+        errors[errorCount].character = 'B';
+        errorCount++;
+
+        printf("Error type B at Line %d: Syntax error after \",\". \r \n", @3.first_line);
+
+        SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @3.first_line);
+        insertSyntaxTree((SyntaxTreeNode*)$1, nodeErr);
+
+        SyntaxTreeNode* nodeDecList = createNewNode("DecList", NONEPSILON, @3.first_line);
+        insertSyntaxTree(nodeErr, nodeDecList);
+
+        $$ = nodeDecList;
+    } else {
+        $$ = nullptr;
+    }
 }
 
 Dec : VarDec {
-    printf("Dec parsed successfully \r \n");
+    SyntaxTreeNode* nodeDec = createNewNode("Dec", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeDec);
+
+    $$ = nodeDec;
 }
 | VarDec ASSIGNOP Exp {
-    printf("Dec parsed successfully \r \n");
+    SyntaxTreeNode* nodeDec = createNewNode("Dec", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeDec);
+
+    SyntaxTreeNode* nodeASSIGNOP = createNewNode("ASSIGNOP", NONVALUE, @2.first_line);
+    insertSyntaxTree(nodeASSIGNOP, nodeDec);
+    insertSyntaxTree((SyntaxTreeNode*)$3, nodeDec);
+
+    $$ = nodeDec;
+}
+| VarDec error Exp {
+    if(isNewError(@2.first_line, 'B')){
+        errors[errorCount].lineno = yylineno;
+        errors[errorCount].character = 'B';
+        errorCount++;
+
+        printf("Error type B at Line %d: Missing \"=\". \r \n", @2.first_line);
+
+        SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @2.first_line);
+        insertSyntaxTree((SyntaxTreeNode*)$1, nodeErr);
+        insertSyntaxTree((SyntaxTreeNode*)$3, nodeErr);
+
+        SyntaxTreeNode* nodeDec = createNewNode("Dec", NONEPSILON, @2.first_line);
+        insertSyntaxTree(nodeErr, nodeDec);
+
+        $$ = nodeDec;
+    } else {
+        $$ = nullptr;
+    }
+}
+| VarDec ASSIGNOP error {
+    if(isNewError(@3.first_line, 'B')){
+        errors[errorCount].lineno = yylineno;
+        errors[errorCount].character = 'B';
+        errorCount++;
+
+        printf("Error type B at Line %d: Syntax error after \"=\". \r \n", @3.first_line);
+
+        SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @3.first_line);
+        insertSyntaxTree((SyntaxTreeNode*)$1, nodeErr);
+
+        SyntaxTreeNode* nodeDec = createNewNode("Dec", NONEPSILON, @3.first_line);
+        insertSyntaxTree(nodeErr, nodeDec);
+
+        $$ = nodeDec;
+    } else {
+        $$ = nullptr;
+    }
 }
 
 // Expressions
 Exp : Exp ASSIGNOP Exp {
-    printf("Exp parsed successfully \r \n");
+    SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeExp);
+    SyntaxTreeNode* nodeASSIGNOP = createNewNode("ASSIGNOP", NONVALUE, @2.first_line);
+    insertSyntaxTree(nodeASSIGNOP, nodeExp);
+    insertSyntaxTree((SyntaxTreeNode*)$3, nodeExp);
+
+    $$ = nodeExp;
 }
 | Exp AND Exp {
-    printf("Exp parsed successfully \r \n");
+    SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeExp);
+    SyntaxTreeNode* nodeAND = createNewNode("AND", NONVALUE, @2.first_line);
+    insertSyntaxTree(nodeAND, nodeExp);
+    insertSyntaxTree((SyntaxTreeNode*)$3, nodeExp);
+
+    $$ = nodeExp;
 }
 | Exp OR Exp {
-    printf("Exp parsed successfully \r \n");
+    SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeExp);
+    SyntaxTreeNode* nodeOR = createNewNode("OR", NONVALUE, @2.first_line);
+    insertSyntaxTree(nodeOR, nodeExp);
+    insertSyntaxTree((SyntaxTreeNode*)$3, nodeExp);
+
+    $$ = nodeExp;
 }
 | Exp RELOP Exp {
-    printf("Exp parsed successfully \r \n");
+    SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeExp);
+    SyntaxTreeNode* nodeRELOP = createNewNode("RELOP", NONVALUE, @2.first_line);
+    insertSyntaxTree(nodeRELOP, nodeExp);
+    insertSyntaxTree((SyntaxTreeNode*)$3, nodeExp);
+
+    $$ = nodeExp;
 }
 | Exp PLUS Exp {
-    printf("Exp parsed successfully \r \n");
+    SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeExp);
+    SyntaxTreeNode* nodePLUS = createNewNode("PLUS", NONVALUE, @2.first_line);
+    insertSyntaxTree(nodePLUS, nodeExp);
+    insertSyntaxTree((SyntaxTreeNode*)$3, nodeExp);
+
+    $$ = nodeExp;
 }
 | Exp MINUS Exp {
-    printf("Exp parsed successfully \r \n");
+    SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeExp);
+    SyntaxTreeNode* nodeMINUS = createNewNode("MINUS", NONVALUE, @2.first_line);
+    insertSyntaxTree(nodeMINUS, nodeExp);
+    insertSyntaxTree((SyntaxTreeNode*)$3, nodeExp);
+
+    $$ = nodeExp;
 }
 | Exp STAR Exp {
-    printf("Exp parsed successfully \r \n");
+    SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeExp);
+    SyntaxTreeNode* nodeSTAR = createNewNode("STAR", NONVALUE, @2.first_line);
+    insertSyntaxTree(nodeSTAR, nodeExp);
+    insertSyntaxTree((SyntaxTreeNode*)$3, nodeExp);
+
+    $$ = nodeExp;
 }
 | Exp DIV Exp {
-    printf("Exp parsed successfully \r \n");
+    SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeExp);
+    SyntaxTreeNode* nodeDIV = createNewNode("DIV", NONVALUE, @2.first_line);
+    insertSyntaxTree(nodeDIV, nodeExp);
+    insertSyntaxTree((SyntaxTreeNode*)$3, nodeExp);
+
+    $$ = nodeExp;
 }
 | LP Exp RP {
-    printf("Exp parsed successfully \r \n");
+    SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeLP = createNewNode("LP", NONVALUE, @1.first_line);
+    insertSyntaxTree(nodeLP, nodeExp);
+    insertSyntaxTree((SyntaxTreeNode*)$2, nodeExp);
+    SyntaxTreeNode* nodeRP = createNewNode("RP", NONVALUE, @3.first_line);
+    insertSyntaxTree(nodeRP, nodeExp);
+
+    $$ = nodeExp;
 }
 | MINUS Exp {
-    printf("Exp parsed successfully \r \n");
+    SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeMINUS = createNewNode("MINUS", NONVALUE, @1.first_line);
+    insertSyntaxTree(nodeMINUS, nodeExp);
+    insertSyntaxTree((SyntaxTreeNode*)$2, nodeExp);
+
+    $$ = nodeExp;
 }
 | NOT Exp {
-    printf("Exp parsed successfully \r \n");
+    SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeNOT = createNewNode("NOT", NONVALUE, @1.first_line);
+    insertSyntaxTree(nodeNOT, nodeExp);
+    insertSyntaxTree((SyntaxTreeNode*)$2, nodeExp);
+
+    $$ = nodeExp;
 }
 | ID LP Args RP {
-    printf("Exp parsed successfully \r \n");
+    SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeID = createNewNode("ID", NONVALUE, @1.first_line);
+    insertSyntaxTree(nodeID, nodeExp);
+    SyntaxTreeNode* nodeLP = createNewNode("LP", NONVALUE, @2.first_line);
+    insertSyntaxTree(nodeLP, nodeExp);
+    insertSyntaxTree((SyntaxTreeNode*)$3, nodeExp);
+    SyntaxTreeNode* nodeRP = createNewNode("RP", NONVALUE, @4.first_line);
+    insertSyntaxTree(nodeRP, nodeExp);
+
+    $$ = nodeExp;
 }
 | ID LP RP {
-    printf("Exp parsed successfully \r \n");
+    SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeID = createNewNode("ID", NONVALUE, @1.first_line);
+    insertSyntaxTree(nodeID, nodeExp);
+    SyntaxTreeNode* nodeLP = createNewNode("LP", NONVALUE, @2.first_line);
+    insertSyntaxTree(nodeLP, nodeExp);
+    SyntaxTreeNode* nodeRP = createNewNode("RP", NONVALUE, @3.first_line);
+    insertSyntaxTree(nodeRP, nodeExp);
+
+    $$ = nodeExp;
 }
 | Exp LB Exp RB {
-    printf("Exp parsed successfully \r \n");
+    SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeExp);
+    SyntaxTreeNode* nodeLB = createNewNode("LB", NONVALUE, @2.first_line);
+    insertSyntaxTree(nodeLB, nodeExp);
+    insertSyntaxTree((SyntaxTreeNode*)$3, nodeExp);
+    SyntaxTreeNode* nodeRB = createNewNode("RB", NONVALUE, @4.first_line);
+    insertSyntaxTree(nodeRB, nodeExp);
+
+    $$ = nodeExp;
 }
 | Exp DOT ID {
-    printf("Exp parsed successfully \r \n");
+    SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeExp);
+    SyntaxTreeNode* nodeDOT = createNewNode("DOT", NONVALUE, @2.first_line);
+    insertSyntaxTree(nodeDOT, nodeExp);
+    SyntaxTreeNode* nodeID = createNewNode("ID", NONVALUE, @3.first_line);
+    insertSyntaxTree(nodeID, nodeExp);
+
+    $$ = nodeExp;
 }
 | ID {
-    printf("Exp parsed successfully \r \n");
+    SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeID = createNewNode("ID", NONVALUE, @1.first_line);
+    insertSyntaxTree(nodeID, nodeExp);
+
+    $$ = nodeExp;
 }
 | INT {
-    printf("Exp parsed successfully \r \n");
+    SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeINT = createNewNode("INT", INT, @1.first_line);
+    nodeINT->intVal = (int)strtol($1, NULL, 10);
+    insertSyntaxTree(nodeINT, nodeExp);
+
+    $$ = nodeExp;
 }
 | FLOAT {
-    printf("Exp parsed successfully \r \n");
+    SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeFLOAT = createNewNode("FLOAT", FLOAT, @1.first_line);
+    nodeFLOAT->floatVal = (float)strtod($1, NULL);
+    insertSyntaxTree(nodeFLOAT, nodeExp);
+
+    $$ = nodeExp;
 }
 
 
 Args : Exp COMMA Args {
-    printf("Args parsed successfully \r \n");
+    SyntaxTreeNode* nodeArgs = createNewNode("Args", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeArgs);
+    SyntaxTreeNode* nodeCOMMA = createNewNode("COMMA", NONVALUE, @2.first_line);
+    insertSyntaxTree(nodeCOMMA, nodeArgs);
+    insertSyntaxTree((SyntaxTreeNode*)$3, nodeArgs);
+
+    $$ = nodeArgs;
+}
+| Exp COMMA error {
+    if(isNewError(@2.first_line, @2.first_column)) {
+        errors[errorCount].lineno = @2.first_line;
+        errors[errorCount].character = @2.first_column;
+        errorCount++;
+
+        prinft("Error type B at Line %d: Missing argument after ',' \r \n", @2.first_line);
+
+        SyntaxTreeNode* nodeArgs = createNewNode("Args", NONEPSILON, @$.first_line);
+        insertSyntaxTree((SyntaxTreeNode*)$1, nodeArgs);
+        SyntaxTreeNode* nodeCOMMA = createNewNode("COMMA", NONVALUE, @2.first_line);
+        insertSyntaxTree(nodeCOMMA, nodeArgs);
+        SyntaxTreeNode* nodeError = createNewNode("error", NONVALUE, @3.first_line);
+        insertSyntaxTree(nodeError, nodeArgs);
+
+        $$ = nodeArgs;
+    } else {
+        $$ = nullptr;
+    }
+}
+| Exp error Args {
+    if(isNewError(@2.first_line, @2.first_column)) {
+        errors[errorCount].lineno = @2.first_line;
+        errors[errorCount].character = @2.first_column;
+        errorCount++;
+
+        prinft("Error type B at Line %d: Missing ',' between arguments \r \n", @2.first_line);
+
+        SyntaxTreeNode* nodeArgs = createNewNode("Args", NONEPSILON, @$.first_line);
+        insertSyntaxTree((SyntaxTreeNode*)$1, nodeArgs);
+        SyntaxTreeNode* nodeError = createNewNode("error", NONVALUE, @2.first_line);
+        insertSyntaxTree(nodeError, nodeArgs);
+        insertSyntaxTree((SyntaxTreeNode*)$3, nodeArgs);
+
+        $$ = nodeArgs;
+    } else {
+        $$ = nullptr;
+    }
 }
 | Exp {
-    printf("Args parsed successfully \r \n");
+    SyntaxTreeNode* nodeArgs = createNewNode("Args", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeArgs);
+
+    $$ = nodeArgs;
 }
 
 
@@ -908,5 +1370,9 @@ int main(int argc, char *argv[]) {
     yyrestart(yyin);
     yyparse();
     fclose(yyin);
+
+    if (errorCount == 0) {
+        traverseSyntaxTree(root);
+    }
     return 0;
 }
