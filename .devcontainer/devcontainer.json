@@ -13,12 +13,15 @@
         "vscode": {
         "extensions": [
             "ms-vscode.cpptools-extension-pack", 
-            "MS-CEINTL.vscode-language-pack-zh-hans",
+            "ms-ceintl.vscode-language-pack-zh-hans",
             "daohong-emilio.yash",
-            "zhuangtongfa.material-theme"
+            "zhuangtongfa.material-theme",
+            "github.copilot",
+            "esbenp.prettier-vscode",
+            "chouzz.vscode-better-align"
             ]
         }
-    },
+    }//,
 
-    "remoteUser": "vscode"
+    // "remoteUser": "vscode"
 }
