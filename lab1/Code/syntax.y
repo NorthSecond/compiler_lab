@@ -289,7 +289,7 @@ SyntaxTreeNode *createNewNode(char *name, enum SyntaxTreeNodeType type, int line
 Program : ExtDefList {
     SyntaxTreeNode* nodeProgram = createNewNode("Program", NONEPSILON, @$.first_line);
 
-    insertSyntaxTree((SyntaxTreeNode*)$1, nodeProgram);
+    insertSyntaxTree((SyntaxTreeNode* $1), nodeProgram);
 
     $$ = nodeProgram;
 
@@ -432,11 +432,18 @@ StructSpecifier : STRUCT OptTag LC DefList RC {
         errorCount++;
 
         printf("Error type B at Line %d: Missing \"}\". \r \n", @5.first_line);
+        
+        SyntaxTreeNode* nodeStructSpecifier = createNewNode("StructSpecifier", NONEPSILON, @$.first_line);
+        SyntaxTreeNode* nodeStruct = createNewNode("STRUCT", NONVALUE, @1.first_line);
+
+        SyntaxTreeNode* nodeLC = createNewNode("LC", NONVALUE, @3.first_line);
 
         SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @5.first_line);
-        insertSyntaxTree((SyntaxTreeNode*)$1, nodeErr);
 
-        SyntaxTreeNode* nodeStructSpecifier = createNewNode("StructSpecifier", NONEPSILON, @5.first_line);
+        insertSyntaxTree(nodeStruct, nodeStructSpecifier);
+        insertSyntaxTree((SyntaxTreeNode*)$2, nodeStructSpecifier);
+        insertSyntaxTree(nodeLC, nodeStructSpecifier);
+        insertSyntaxTree((SyntaxTreeNode*)$4, nodeStructSpecifier);
         insertSyntaxTree(nodeErr, nodeStructSpecifier);
 
         $$ = nodeStructSpecifier;
@@ -608,7 +615,7 @@ FunDec : ID LP VarList RP {
         printf("Error type B at Line %d: Syntax error after the \"(\". \r \n", @3.first_line);
 
         SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @3.first_line);
-        insertSyntaxTree((SyntaxTreeNode*)$1, nodeErr);
+        insertSyntaxTree((SyntaxTreeNode* $1), nodeErr);
 
         SyntaxTreeNode* nodeFunDec = createNewNode("FunDec", NONEPSILON, @3.first_line);
         insertSyntaxTree(nodeErr, nodeFunDec);
@@ -718,7 +725,23 @@ CompSt : LC DefList StmtList RC {
     $$ = nodeCompSt;
 }
 | error DefList StmtList RC {
-    // if(isNewError())
+    if(isNewError(@1.first_line, 'B')){
+        errors[errorCount].lineno = yylineno;
+        errors[errorCount].character = 'B';
+        errorCount++;
+
+        printf("Error type B at Line %d: Missing \"{\". \r \n", @1.first_line);
+
+        SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @1.first_line);
+        insertSyntaxTree((SyntaxTreeNode*)$2, nodeErr);
+
+        SyntaxTreeNode* nodeCompSt = createNewNode("CompSt", NONEPSILON, @1.first_line);
+        insertSyntaxTree(nodeErr, nodeCompSt);
+
+        $$ = nodeCompSt;
+    } else {
+        $$ = nullptr;
+    }
 }
 
 StmtList : Stmt StmtList {
