@@ -48,7 +48,9 @@ enum class SyntexTreeNodeType {
     // 词法单元INT
     INT,
     // 词法单元FLOAT
-    FLOAT
+    FLOAT,
+    // 不产生语法单元的词法单元
+    NONVALUE
 };
 
 // 语法树的定义
@@ -98,7 +100,8 @@ void traverseSyntaxTree(SyntaxTree *root, int indent)
         printf("  ");
     }
     // 先序遍历
-    printf("%s (%d) \r \n", root->name, root->lineno);
+    // printf("%s (%d) \r \n", root->name, root->lineno);
+    printNodeInfo(root);
     traverseSyntaxTree(root->child, indent + 1);
     traverseSyntaxTree(root->sibling, indent);
 }
@@ -121,21 +124,26 @@ void printNodeInfo(SyntaxTree *node)
         // 无需打印语法单元对应的信息
         // printf("%s (%d) \r \n", node->name, node->lineno);
         break;
+
+    // 如果当前节点是词法单元 无需打印行号
     case ID:
         // 额外打印对应的词素
-        printf("%s (%d): %s \r \n", node->name, node->lineno, node->stringVal);
+        printf("%s: %s \r \n", node->name, node->stringVal);
         break;
     case TYPE:
         // 额外打印对应的类型
-        printf("%s (%d): %s \r \n", node->name, node->lineno, node->stringVal);
+        printf("%s: %s \r \n", node->name, node->stringVal);
         break;
     case INT:
         // 额外打印对应的整数值
-        printf("%s (%d): %d \r \n", node->name, node->lineno, node->intVal);
+        printf("%s: %d \r \n", node->name, node->intVal);
         break;
     case FLOAT:
         // 额外打印对应的浮点数值
-        printf("%s (%d): %f \r \n", node->name, node->lineno, node->floatVal);
+        printf("%s: %f \r \n", node->name, node->floatVal);
+        break;
+    case NONVALUE:
+        printf("%s \r \n", node->name);
         break;
     default:
         break;
@@ -157,7 +165,7 @@ void destroySyntaxTree(SyntaxTree *root)
 
 // 语法树的插入
 // 对应多叉树的插入
-void insertSyntaxTree(SyntaxTree *root, SyntaxTree *node)
+void insertSyntaxTree(SyntaxTree *root, SyntaxTreeNode *node)
 {
     if (root == NULL)
     {
@@ -180,6 +188,18 @@ void insertSyntaxTree(SyntaxTree *root, SyntaxTree *node)
 }
 
 // create new node
+// 创建新的语法树节点
+SyntaxTreeNode *createNewNode(char *name, enum SyntaxTreeNodeType type, int lineno)
+{
+    Struct SyntaxTreeNode *node = (SyntaxTreeNode *)malloc(sizeof(SyntaxTreeNode));
+    node->name = name;
+    node->type = type;
+    node->lineno = lineno;
+    node->childCount = 0;
+    node->child = NULL;
+    node->sibling = NULL;
+    return node;
+}
 
 %}
 
@@ -267,12 +287,13 @@ void insertSyntaxTree(SyntaxTree *root, SyntaxTree *node)
 // High-level Definitions
 
 Program : ExtDefList {
-    printf("Program parsed successfully \r \n");
-    printf("Total lines: %d \r \n", yylineno);
-    printf("Total errors: %d \r \n", errorCount);
-    for (int i = 0; i < errorCount; i++) {
-        // printf("Error %d: Line %d, character %c \r \n", i + 1, errors[i].lineno, errors[i].character);
-    }
+    SyntaxTreeNode* nodeProgram = createNewNode("Program", NONEPSILON, @$.first_line);
+
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeProgram);
+
+    $$ = nodeProgram;
+
+    syntaxTreeRoot = $$;
 } 
 | ExtDefList error {
     if(isNewError(@2.first_line, 'B')) {
@@ -282,89 +303,422 @@ Program : ExtDefList {
 
         printf("Error type B at Line %d: Unexpected zharacter. \r \n", @2.first_line);
 
-        
+        SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @2.first_line);
+        insertSyntaxTree((SyntaxTreeNode*)$1, nodeErr);
+
+        SyntaxTreeNode* nodeProgram = createNewNode("Program", NONEPSILON, @2.first_line);
+
+        $$ = nodeProgram;
+        syntaxTreeRoot = $$;
+    } else {
+        $$ = nullptr;
     }
 }
 
 ExtDefList : ExtDef ExtDefList {
-    printf("Ext_def_list parsed successfully \r \n");
+    SyntaxTreeNode* nodeExtDefList = createNewNode("ExtDefList", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeExtDefList);
+    insertSyntaxTree((SyntaxTreeNode*)$2, nodeExtDefList);
+    $$ = nodeExtDefList;
 } 
 | {
-    printf("Ext_def_list parsed successfully \r \n");
+    $$ = nullptr;
 }
 
 ExtDef : Specifier ExtDecList SEMI {
-    printf("Ext_def parsed successfully \r \n");
+    SyntaxTreeNode* nodeExtDef = createNewNode("ExtDef", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeExtDef);
+    insertSyntaxTree((SyntaxTreeNode*)$2, nodeExtDef);
+    SyntaxTreeNode* nodeSemi = createNewNode("SEMI", SEMI, @3.first_line);
+    insertSyntaxTree(nodeSemi, nodeExtDef);
+
+    $$ = nodeExtDef;
 }
 | Specifier SEMI {
-    printf("Ext_def parsed successfully \r \n");
+    SyntaxTreeNode* nodeExtDef = createNewNode("ExtDef", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeExtDef);
+    SyntaxTreeNode* nodeSemi = createNewNode("SEMI", SEMI, @2.first_line);
+    insertSyntaxTree(nodeSemi, nodeExtDef);
+
+    $$ = nodeExtDef;
 }
 | Specifier FunDec CompSt {
-    printf("Ext_def parsed successfully \r \n");
+    SyntaxTreeNode* nodeExtDef = createNewNode("ExtDef", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeExtDef);
+    insertSyntaxTree((SyntaxTreeNode*)$2, nodeExtDef);
+    insertSyntaxTree((SyntaxTreeNode*)$3, nodeExtDef);
+
+    $$ = nodeExtDef;
+} 
+| Specifier error {
+    if(isNewError(@2.first_line, 'B')){
+        errors[errorCount].lineno = yylineno;
+        errors[errorCount].character = 'B';
+        errorCount++;
+
+        printf("Error type B at Line %d: Missing \". \r \n", @2.first_line);
+
+        SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @2.first_line);
+        insertSyntaxTree((SyntaxTreeNode*)$1, nodeErr);
+
+        SyntaxTreeNode* nodeExtDef = createNewNode("ExtDef", NONEPSILON, @2.first_line);
+        insertSyntaxTree(nodeErr, nodeExtDef);
+
+        $$ = nodeExtDef;
+    } else {
+        $$ = nullptr;
+    }
 }
 
 ExtDecList : VarDec {
-    printf("Ext_dec_list parsed successfully \r \n");
+    SyntaxTreeNode* nodeExtDecList = createNewNode("ExtDecList", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeExtDecList);
+
+    $$ = nodeExtDecList;
 }
 | VarDec COMMA ExtDecList {
-    printf("Ext_dec_list parsed successfully \r \n");
+    SyntaxTreeNode* nodeExtDecList = createNewNode("ExtDecList", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeExtDecList);
+    SyntaxTreeNode* nodeComma = createNewNode("COMMA", NONVALUE, @2.first_line);
+    insertSyntaxTree(nodeComma, nodeExtDecList);
+    insertSyntaxTree((SyntaxTreeNode*)$3, nodeExtDecList);
+
+    $$ = nodeExtDecList;
 }
 
 // Specifiers
 Specifier : TYPE {
-    printf("Specifier parsed successfully \r \n");
+    Struct SyntaxTreeNode* nodeSpecifier = createNewNode("Specifier", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeType = createNewNode("TYPE", NONVALUE, @1.first_line);
+    insertSyntaxTree(nodeType, nodeSpecifier);
+
+    $$ = nodeSpecifier;
 }
 | StructSpecifier {
-    printf("Specifier parsed successfully \r \n");
+    SyntaxTreeNode* nodeSpecifier = createNewNode("Specifier", NONEPSILON, @$.first_line);
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeSpecifier);
+
+    $$ = nodeSpecifier;
 }
 
 StructSpecifier : STRUCT OptTag LC DefList RC {
-    printf("Struct_specifier parsed successfully \r \n");
+    SyntaxTreeNode* nodeStructSpecifier = createNewNode("StructSpecifier", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeStruct = createNewNode("STRUCT", NONVALUE, @1.first_line);
+
+    SyntaxTreeNode* nodeLC = createNewNode("LC", NONVALUE, @3.first_line);
+    SyntaxTreeNode* nodeRC = createNewNode("RC", NONVALUE, @5.first_line);
+
+    insertSyntaxTree(nodeStruct, nodeStructSpecifier);
+    insertSyntaxTree((SyntaxTreeNode*)$2, nodeStructSpecifier);
+    insertSyntaxTree(nodeLC, nodeStructSpecifier);
+    insertSyntaxTree((SyntaxTreeNode*)$4, nodeStructSpecifier);
+    insertSyntaxTree(nodeRC, nodeStructSpecifier);
+
+    $$ = nodeStructSpecifier;
 }
 | STRUCT Tag {
-    printf("Struct_specifier parsed successfully \r \n");
+    SyntaxTreeNode* nodeStructSpecifier = createNewNode("StructSpecifier", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeStruct = createNewNode("STRUCT", NONVALUE, @1.first_line);
+
+    insertSyntaxTree(nodeStruct, nodeStructSpecifier);
+    insertSyntaxTree((SyntaxTreeNode*)$2, nodeStructSpecifier);
+
+    $$ = nodeStructSpecifier;
+}
+| STRUCT OptTag LC DefList error {
+    if(isNewError(@5.first_line, 'B')){
+        errors[errorCount].lineno = yylineno;
+        errors[errorCount].character = 'B';
+        errorCount++;
+
+        printf("Error type B at Line %d: Missing \"}\". \r \n", @5.first_line);
+
+        SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @5.first_line);
+        insertSyntaxTree((SyntaxTreeNode*)$1, nodeErr);
+
+        SyntaxTreeNode* nodeStructSpecifier = createNewNode("StructSpecifier", NONEPSILON, @5.first_line);
+        insertSyntaxTree(nodeErr, nodeStructSpecifier);
+
+        $$ = nodeStructSpecifier;
+    } else {
+        $$ = nullptr;
+    }
 }
 
 OptTag : ID {
-    printf("Opt_tag parsed successfully \r \n");
+    SyntaxTreeNode* nodeOptTag = createNewNode("OptTag", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeID = createNewNode("ID", ID, @1.first_line);
+    nodeID->stringVal = $1;
+
+    insertSyntaxTree(nodeID, nodeOptTag);
+
+    $$ = nodeOptTag;
 }
 | {
-    printf("Opt_tag parsed successfully \r \n");
+    SyntaxTreeNode* nodeOptTag = createNewNode("OptTag", NONEPSILON, @$.first_line);
+
+    $$ = nodeOptTag;
 }
 
 Tag : ID {
-    printf("Tag parsed successfully \r \n");
+    SyntaxTreeNode* nodeTag = createNewNode("Tag", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeID = createNewNode("ID", ID, @1.first_line);
+    nodeID->stringVal = $1;
+
+    insertSyntaxTree(nodeID, nodeTag);
+
+    $$ = nodeTag;
 }
 
 // Declarators
 VarDec : ID {
-    printf("Var_dec parsed successfully \r \n");
+    SyntaxTreeNode* nodeVarDec = createNewNode("VarDec", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeID = createNewNode("ID", ID, @1.first_line);
+    nodeID->stringVal = $1;
+
+    insertSyntaxTree(nodeID, nodeVarDec);
+
+    $$ = nodeVarDec;
 }
 | VarDec LB INT RB {
-    printf("Var_dec parsed successfully \r \n");
+    SyntaxTreeNode* nodeVarDec = createNewNode("VarDec", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeLB = createNewNode("LB", NONVALUE, @2.first_line);
+    SyntaxTreeNode* nodeINT = createNewNode("INT", INT, @3.first_line);
+    nodeINT->intVal = $3;
+    SyntaxTreeNode* nodeRB = createNewNode("RB", NONVALUE, @4.first_line);
+
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeVarDec);
+    insertSyntaxTree(nodeLB, nodeVarDec);
+    insertSyntaxTree(nodeINT, nodeVarDec);
+    insertSyntaxTree(nodeRB, nodeVarDec);
+
+    $$ = nodeVarDec;
+}
+| VarDec LB error RB {
+    if(isNewError(@3.first_line, 'B')){
+        errors[errorCount].lineno = yylineno;
+        errors[errorCount].character = 'B';
+        errorCount++;
+
+        printf("Error type B at Line %d: Syntax error at index, require INT value. \r \n", @3.first_line);
+
+        SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @3.first_line);
+        insertSyntaxTree((SyntaxTreeNode*)$1, nodeErr);
+
+        SyntaxTreeNode* nodeVarDec = createNewNode("VarDec", NONEPSILON, @3.first_line);
+        insertSyntaxTree(nodeErr, nodeVarDec);
+
+        $$ = nodeVarDec;
+    } else {
+        $$ = nullptr;
+    }
+}
+| VarDec LB INT error {
+    if(isNewError(@4.first_line, 'B')){
+        errors[errorCount].lineno = yylineno;
+        errors[errorCount].character = 'B';
+        errorCount++;
+
+        printf("Error type B at Line %d: Missing \"]\". \r \n", @4.first_line);
+
+        SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @4.first_line);
+        insertSyntaxTree((SyntaxTreeNode*)$1, nodeErr);
+
+        SyntaxTreeNode* nodeVarDec = createNewNode("VarDec", NONEPSILON, @4.first_line);
+        insertSyntaxTree(nodeErr, nodeVarDec);
+
+        $$ = nodeVarDec;
+    } else {
+        $$ = nullptr;
+    }
 }
 
 FunDec : ID LP VarList RP {
-    printf("Fun_dec parsed successfully \r \n");
+    SyntaxTreeNode* nodeFunDec = createNewNode("FunDec", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeID = createNewNode("ID", ID, @1.first_line);
+    nodeID->stringVal = $1;
+    SyntaxTreeNode* nodeLP = createNewNode("LP", NONVALUE, @2.first_line);
+    SyntaxTreeNode* nodeRP = createNewNode("RP", NONVALUE, @4.first_line);
+
+    insertSyntaxTree(nodeID, nodeFunDec);
+    insertSyntaxTree(nodeLP, nodeFunDec);
+    insertSyntaxTree((SyntaxTreeNode*)$3, nodeFunDec);
+    insertSyntaxTree(nodeRP, nodeFunDec);
+
+    $$ = nodeFunDec;
 }
 | ID LP RP {
-    printf("Fun_dec parsed successfully \r \n");
+    // 参数为空
+    SyntaxTreeNode* nodeFunDec = createNewNode("FunDec", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeID = createNewNode("ID", ID, @1.first_line);
+    nodeID->stringVal = $1;
+    SyntaxTreeNode* nodeLP = createNewNode("LP", NONVALUE, @2.first_line);
+    SyntaxTreeNode* nodeRP = createNewNode("RP", NONVALUE, @3.first_line);
+
+    insertSyntaxTree(nodeID, nodeFunDec);
+    insertSyntaxTree(nodeLP, nodeFunDec);
+    insertSyntaxTree(nodeRP, nodeFunDec);
+
+    $$ = nodeFunDec;
+}
+| ID LP error {
+    if(isNewError(@3.first_line, 'B')){
+        errors[errorCount].lineno = yylineno;
+        errors[errorCount].character = 'B';
+        errorCount++;
+
+        printf("Error type B at Line %d: Missing \")\". \r \n", @3.first_line);
+
+        SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @3.first_line);
+        insertSyntaxTree((SyntaxTreeNode*)$1, nodeErr);
+
+        SyntaxTreeNode* nodeFunDec = createNewNode("FunDec", NONEPSILON, @3.first_line);
+        insertSyntaxTree(nodeErr, nodeFunDec);
+
+        $$ = nodeFunDec;
+    } else {
+        $$ = nullptr;
+    }
+}
+| ID LP VarList error {
+    if(isNewError(@4.first_line, 'B')){
+        errors[errorCount].lineno = yylineno;
+        errors[errorCount].character = 'B';
+        errorCount++;
+
+        printf("Error type B at Line %d: Missing \")\". \r \n", @4.first_line);
+
+        SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @4.first_line);
+        insertSyntaxTree((SyntaxTreeNode*)$1, nodeErr);
+
+        SyntaxTreeNode* nodeFunDec = createNewNode("FunDec", NONEPSILON, @4.first_line);
+        insertSyntaxTree(nodeErr, nodeFunDec);
+
+        $$ = nodeFunDec;
+    } else {
+        $$ = nullptr;
+    }
+}
+| ID LP error VarList {
+    if(isNewError(@3.first_line, 'B')){
+        errors[errorCount].lineno = yylineno;
+        errors[errorCount].character = 'B';
+        errorCount++;
+
+        printf("Error type B at Line %d: Syntax error after the \"(\". \r \n", @3.first_line);
+
+        SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @3.first_line);
+        insertSyntaxTree((SyntaxTreeNode*)$1, nodeErr);
+
+        SyntaxTreeNode* nodeFunDec = createNewNode("FunDec", NONEPSILON, @3.first_line);
+        insertSyntaxTree(nodeErr, nodeFunDec);
+
+        $$ = nodeFunDec;
+    } else {
+        $$ = nullptr;
+    }
+}
+| ID LP error error {
+    if(isNewError(@3.first_line, 'B')){
+        errors[errorCount].lineno = yylineno;
+        errors[errorCount].character = 'B';
+        errorCount++;
+
+        printf("Error type B at Line %d: Syntax error after the \"(\". \r \n", @3.first_line);
+
+        SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @3.first_line);
+        insertSyntaxTree((SyntaxTreeNode*)$1, nodeErr);
+
+        SyntaxTreeNode* nodeFunDec = createNewNode("FunDec", NONEPSILON, @3.first_line);
+        insertSyntaxTree(nodeErr, nodeFunDec);
+
+        $$ = nodeFunDec;
+    } else {
+        $$ = nullptr;
+    }
+}
+| ID LP error RP {
+    if(isNewError(@3.first_line, 'B')){
+        errors[errorCount].lineno = yylineno;
+        errors[errorCount].character = 'B';
+        errorCount++;
+
+        printf("Error type B at Line %d: Syntax error after the \"(\". \r \n", @3.first_line);
+
+        SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @3.first_line);
+        insertSyntaxTree((SyntaxTreeNode*)$1, nodeErr);
+
+        SyntaxTreeNode* nodeFunDec = createNewNode("FunDec", NONEPSILON, @3.first_line);
+        insertSyntaxTree(nodeErr, nodeFunDec);
+
+        $$ = nodeFunDec;
+    } else {
+        $$ = nullptr;
+    }
+}
+| ID error RP {
+    if(isNewError(@2.first_line, 'B')){
+        errors[errorCount].lineno = yylineno;
+        errors[errorCount].character = 'B';
+        errorCount++;
+
+        printf("Error type B at Line %d: Missing \"(\". \r \n", @2.first_line);
+
+        SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @2.first_line);
+        insertSyntaxTree((SyntaxTreeNode*)$1, nodeErr);
+
+        SyntaxTreeNode* nodeFunDec = createNewNode("FunDec", NONEPSILON, @2.first_line);
+        insertSyntaxTree(nodeErr, nodeFunDec);
+
+        $$ = nodeFunDec;
+    } else {
+        $$ = nullptr;
+    }
 }
 
+
 VarList : ParamDec COMMA VarList {
-    printf("Var_list parsed successfully \r \n");
+    SyntaxTreeNode* nodeVarList = createNewNode("VarList", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeCOMMA = createNewNode("COMMA", NONVALUE, @2.first_line);
+
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeVarList);
+    insertSyntaxTree(nodeCOMMA, nodeVarList);
+    insertSyntaxTree((SyntaxTreeNode*)$3, nodeVarList);
+
+    $$ = nodeVarList;
 }
 | ParamDec {
-    printf("Var_list parsed successfully \r \n");
+    SyntaxTreeNode* nodeVarList = createNewNode("VarList", NONEPSILON, @$.first_line);
+
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeVarList);
+
+    $$ = nodeVarList;
 }
 
 ParamDec : Specifier VarDec {
-    printf("Param_dec parsed successfully \r \n");
+    SyntaxTreeNode* nodeParamDec = createNewNode("ParamDec", NONEPSILON, @$.first_line);
+
+    insertSyntaxTree((SyntaxTreeNode*)$1, nodeParamDec);
+    insertSyntaxTree((SyntaxTreeNode*)$2, nodeParamDec);
+
+    $$ = nodeParamDec;
 }
 
 // Statements
 CompSt : LC DefList StmtList RC {
-    printf("Comp_st parsed successfully \r \n");
+    SyntaxTreeNode* nodeCompSt = createNewNode("CompSt", NONEPSILON, @$.first_line);
+    SyntaxTreeNode* nodeLC = createNewNode("LC", NONVALUE, @1.first_line);
+    SyntaxTreeNode* nodeRC = createNewNode("RC", NONVALUE, @4.first_line);
+
+    insertSyntaxTree(nodeLC, nodeCompSt);
+    insertSyntaxTree((SyntaxTreeNode*)$2, nodeCompSt);
+    insertSyntaxTree((SyntaxTreeNode*)$3, nodeCompSt);
+    insertSyntaxTree(nodeRC, nodeCompSt);
+
+    $$ = nodeCompSt;
+}
+| error DefList StmtList RC {
+    // if(isNewError())
 }
 
 StmtList : Stmt StmtList {
