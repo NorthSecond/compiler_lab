@@ -1,0 +1,22 @@
+{
+    // "image": "mcr.microsoft.com/devcontainers/cpp:ubuntu",
+
+    "build" :{
+        "dockerfile": "Dockerfile",
+        "args": { 
+            "USERNAME": "vscode",
+            "USER_UID": "1000",
+            "USER_GID": "1000"
+        }
+    },
+    
+    "customizations": {
+        "vscode": {
+        "extensions": [
+            "ms-vscode.cpptools-extension-pack", 
+            "MS-CEINTL.vscode-language-pack-zh-hans",
+            "daohong-emilio.yash"
+            ]
+        }
+    }
+}
