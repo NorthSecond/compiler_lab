@@ -30,4 +30,4 @@ USER vscode
 CMD ["/bin/bash"]
 
 # set the default git user name and email
-RUN git config --global user.name "yangyf83" && git config --global user.email "yangyf83@aliyun.com"
+# RUN git config --global user.name "yangyf83" && git config --global user.email "yangyf83@aliyun.com"
