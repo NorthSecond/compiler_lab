@@ -15,7 +15,8 @@
         "extensions": [
             "ms-vscode.cpptools-extension-pack", 
             "MS-CEINTL.vscode-language-pack-zh-hans",
-            "daohong-emilio.yash"
+            "daohong-emilio.yash",
+            "zhuangtongfa.material-theme"
             ]
         }
     }
