@@ -1,6 +1,5 @@
 {
     // "image": "mcr.microsoft.com/devcontainers/cpp:ubuntu",
-
     "build" :{
         "dockerfile": "Dockerfile",
         "args": { 
@@ -19,5 +18,7 @@
             "zhuangtongfa.material-theme"
             ]
         }
-    }
+    },
+
+    "remoteUser": "vscode"
 }

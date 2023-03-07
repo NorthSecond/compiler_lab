@@ -18,16 +18,16 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # set the default shell to bash instead of sh
-ENV SHELL /bin/bash
+# ENV SHELL /bin/bash
 
 # set the default working directory
-WORKDIR /workspaces
+# WORKDIR /workspaces
 
 # set the default user
 USER vscode
 
 # set the default command
-CMD ["/bin/bash"]
+# CMD ["/bin/bash"]
 
 # set the default git user name and email
 # RUN git config --global user.name "yangyf83" && git config --global user.email "yangyf83@aliyun.com"
