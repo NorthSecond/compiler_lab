@@ -49,3 +49,4 @@
 *.tmp
 *.bak
 *.output
+*.log

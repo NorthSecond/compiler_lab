@@ -47,7 +47,7 @@ char *yytext;
  * ID: 词法单元ID
  * TYPE: 词法单元TYPE
  * INT: 词法单元INT
- * FLOAT: 词法单元FLOAT
+ * FLOATS: 词法单元FLOAT
  * NONVALUE: 不产生语法单元的词法单元
  */
 enum SyntaxTreeNodeType { 
@@ -56,7 +56,7 @@ enum SyntaxTreeNodeType {
     ID,
     TYPE,
     INT,
-    FLOAT,
+    FLOATS,
     NONVALUE
 };
 
@@ -94,32 +94,7 @@ struct SyntaxTreeNode *createSyntaxTree(char *name, enum SyntaxTreeNodeType type
     return node;
 }
 
-// 语法树的遍历
-// 这里使用先序遍历
-void traverseSyntaxTree(struct SyntaxTreeNode *root, int indent)
-{
-    if (root == NULL)
-    {
-        return;
-    }
-    for (int i = 0; i < indent; i++)
-    {
-        // 用两个空格缩进
-        printf("  ");
-    }
-    
-# ifdef LAB1
-    // LAB 1: 打印节点信息
-    printNodeInfo(root);
-# endif
-    
-    for(struct SyntaxTreeNode *p = root->child; p != NULL; p = p->sibling)
-    {
-        traverseSyntaxTree(p, indent + 1);
-    }
-}
-
-# ifdef LAB1
+#ifdef LAB1
 // 打印节点信息
 // 考虑一下要不要放这里 还是换个位置提出来到别的文件里面
 void printNodeInfo(struct SyntaxTreeNode *node)
@@ -152,7 +127,7 @@ void printNodeInfo(struct SyntaxTreeNode *node)
         // 额外打印对应的整数值
         printf("%s: %d \r \n", node->name, node->intVal);
         break;
-    case FLOAT:
+    case FLOATS:
         // 额外打印对应的浮点数值
         printf("%s: %f \r \n", node->name, node->floatVal);
         break;
@@ -163,8 +138,32 @@ void printNodeInfo(struct SyntaxTreeNode *node)
         break;
     }
 }
-# endif
+#endif
 
+// 语法树的遍历
+// 这里使用先序遍历
+void traverseSyntaxTree(struct SyntaxTreeNode *root, int indent)
+{
+    if (root == NULL)
+    {
+        return;
+    }
+    for (int i = 0; i < indent; i++)
+    {
+        // 用两个空格缩进
+        printf("  ");
+    }
+    
+#ifdef LAB1
+    // LAB 1: 打印节点信息
+    printNodeInfo(root);
+#endif
+    
+    for(struct SyntaxTreeNode *p = root->child; p != NULL; p = p->sibling)
+    {
+        traverseSyntaxTree(p, indent + 1);
+    }
+}
 
 // 语法树的销毁
 void destroySyntaxTree(struct SyntaxTreeNode *root)
@@ -1277,7 +1276,7 @@ Exp : Exp ASSIGNOP Exp {
 }
 | FLOAT {
     struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
-    struct SyntaxTreeNode* nodeFLOAT = createNewNode("FLOAT", FLOAT, @1.first_line);
+    struct SyntaxTreeNode* nodeFLOAT = createNewNode("FLOAT", FLOATS, @1.first_line);
     // nodeFLOAT->floatVal = (float)strtod($1, NULL);
     nodeFLOAT->floatVal = (float)$1;
     insertSyntaxTree(nodeFLOAT, nodeExp);
@@ -1301,7 +1300,7 @@ Args : Exp COMMA Args {
         errors[errorCount].character = @2.first_column;
         errorCount++;
 
-        prinft("Error type B at Line %d: Missing argument after ',' \r \n", @2.first_line);
+        printf("Error type B at Line %d: Missing argument after ',' \r \n", @2.first_line);
 
         struct SyntaxTreeNode* nodeArgs = createNewNode("Args", NONEPSILON, @$.first_line);
         insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeArgs);
@@ -1321,7 +1320,7 @@ Args : Exp COMMA Args {
         errors[errorCount].character = @2.first_column;
         errorCount++;
 
-        prinft("Error type B at Line %d: Missing ',' between arguments \r \n", @2.first_line);
+        printf("Error type B at Line %d: Missing ',' between arguments \r \n", @2.first_line);
 
         struct SyntaxTreeNode* nodeArgs = createNewNode("Args", NONEPSILON, @$.first_line);
         insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeArgs);

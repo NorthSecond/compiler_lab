@@ -12,7 +12,7 @@ CFLAGS = -std=c99
 # Update: 添加C++编译选项 C 带上 -Wall -Wextra -fno-asm -MMD
 # 23-03-02 更新：既然可以C++编写了 那就直接C++吧
 # CFLAGS = -std=c99 -Wall -Wextra -fno-asm -MMD
-CPPFLAGS = -std=c++17 -Wall -Wextra -fno-asm 
+# CPPFLAGS = -std=c++17 -Wall -Wextra -fno-asm 
 
 # 编译目标：src目录下的所有.c文件
 CFILES = $(shell find ./ -name "*.c")
@@ -31,9 +31,9 @@ OBJS += $(CPPFILES:.cpp=.o)
 parser: syntax $(filter-out $(LFO),$(OBJS))
 	$(CC) -o parser $(filter-out $(LFO),$(OBJS)) -lfl -ly
 
-# $(CC) -c $(YFC) -o $(YFO)
 syntax: lexical syntax-c
-	(CPP) $(CPPFLAGS) -c $(YFC) -o $(YFO)
+	$(CC) -c $(YFC) -o $(YFO)
+# $(CPP) $(CPPFLAGS) -c $(YFC) -o $(YFO)
 
 
 lexical: $(LFILE)
