@@ -157,6 +157,29 @@ void destroySyntaxTree(SyntaxTree *root)
 
 // 语法树的插入
 // 对应多叉树的插入
+void insertSyntaxTree(SyntaxTree *root, SyntaxTree *node)
+{
+    if (root == NULL)
+    {
+        return;
+    }
+    if (root->child == NULL)
+    {
+        root->child = node;
+    }
+    else
+    {
+        SyntaxTree *p = root->child;
+        while (p->sibling != NULL)
+        {
+            p = p->sibling;
+        }
+        p->sibling = node;
+    }
+    root->childCount++;
+}
+
+// create new node
 
 %}
 
@@ -248,11 +271,19 @@ Program : ExtDefList {
     printf("Total lines: %d \r \n", yylineno);
     printf("Total errors: %d \r \n", errorCount);
     for (int i = 0; i < errorCount; i++) {
-        printf("Error %d: Line %d, character %c \r \n", i + 1, errors[i].lineno, errors[i].character);
+        // printf("Error %d: Line %d, character %c \r \n", i + 1, errors[i].lineno, errors[i].character);
     }
 } 
 | ExtDefList error {
+    if(isNewError(@2.first_line, 'B')) {
+        errors[errorCount].lineno = yylineno;
+        errors[errorCount].character = 'B';
+        errorCount++;
 
+        printf("Error type B at Line %d: Unexpected zharacter. \r \n", @2.first_line);
+
+        
+    }
 }
 
 ExtDefList : ExtDef ExtDefList {

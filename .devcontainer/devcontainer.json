@@ -11,14 +11,14 @@
     
     "customizations": {
         "vscode": {
-        "extensions": [
-            "ms-vscode.cpptools-extension-pack", 
-            "ms-ceintl.vscode-language-pack-zh-hans",
-            "daohong-emilio.yash",
-            "zhuangtongfa.material-theme",
-            "github.copilot",
-            "esbenp.prettier-vscode",
-            "chouzz.vscode-better-align"
+            "extensions": [
+                "ms-vscode.cpptools-extension-pack", 
+                "ms-ceintl.vscode-language-pack-zh-hans",
+                "daohong-emilio.yash",
+                "zhuangtongfa.material-theme",
+                "github.copilot",
+                "esbenp.prettier-vscode",
+                "chouzz.vscode-better-align"
             ]
         }
     }//,
