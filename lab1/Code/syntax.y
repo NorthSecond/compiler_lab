@@ -23,7 +23,7 @@ int errorCount = 0;
 int errorLineno = 0;
 char errorChar = '\0';
 
-extern int yyerror();
+void yyerror(char const * s);
 int isNewError(int errorLineno, const char errorChar);
 
 extern int yywrap();
@@ -100,7 +100,7 @@ void printNodeInfo(struct SyntaxTreeNode *node, int indent)
     {
         return;
     }
-    if(node->type != NONEPSILON) {
+    if(node->type != EPSILON) {
         for(int i = 0; i < indent; i++) {
             printf("  ");
         }
@@ -109,34 +109,34 @@ void printNodeInfo(struct SyntaxTreeNode *node, int indent)
     {
     case NONEPSILON:
         // 打印语法单元的名称和对应在输入文件中的行号
-        printf("%s (%d) \r \n", node->name, node->lineno);
+        printf("%s (%d) \n", node->name, node->lineno);
         break;
     case EPSILON:
         // 无需打印语法单元对应的信息
 #ifdef YYDEBUG
-        printf("%s (%d) \r \n", node->name, node->lineno);
+        printf("%s (%d) \n", node->name, node->lineno);
 #endif // YYDEBUG
         break;
 
     // 如果当前节点是词法单元 无需打印行号
     case IDNODE:
         // 额外打印对应的词素
-        printf("%s: %s \r \n", node->name, node->stringVal);
+        printf("%s: %s \n", node->name, node->stringVal);
         break;
     case TYPENODE:
         // 额外打印对应的类型
-        printf("%s: %s \r \n", node->name, node->stringVal);
+        printf("%s: %s \n", node->name, node->stringVal);
         break;
     case INTNODE:
         // 额外打印对应的整数值
-        printf("%s: %d \r \n", node->name, node->intVal);
+        printf("%s: %d \n", node->name, node->intVal);
         break;
     case FLOATNODE:
         // 额外打印对应的浮点数值
-        printf("%s: %f \r \n", node->name, node->floatVal);
+        printf("%s: %f \n", node->name, node->floatVal);
         break;
     case NONVALUENODE:
-        printf("%s \r \n", node->name);
+        printf("%s \n", node->name);
         break;
     default:
         break;
@@ -152,11 +152,6 @@ void traverseSyntaxTree(struct SyntaxTreeNode *root, int indent)
     {
         return;
     }
-    // for (int i = 0; i < indent; i++)
-    // {
-    //     // 用两个空格缩进
-    //     printf("  ");
-    // }
     
 #ifdef LAB1
     // LAB 1: 打印节点信息
@@ -183,12 +178,12 @@ void destroySyntaxTree(struct SyntaxTreeNode *root)
 
 // 语法树的插入
 // 对应多叉树的插入
-void insertSyntaxTree(struct SyntaxTreeNode *root, struct SyntaxTreeNode *node)
+void insertSyntaxTree(struct SyntaxTreeNode *node, struct SyntaxTreeNode *root)
 {
     if (root == NULL || node == NULL)
     {
 #if YYDEBUG > 0
-        printf("insert error: root or node is NULL \r \n");
+        printf("insert error: root or node is NULL \n");
 #endif // YYDEBUG
         return;
     }
@@ -231,9 +226,8 @@ struct SyntaxTreeNode *createNewNode(char *name, enum SyntaxTreeNodeType type, i
     struct  SyntaxTreeNode *type_pnode;
 }
 
-/* %define api.pure full */
-/* %lex-param { yyscan_t scanner } */
-/* %parse-param { void *scanner } */
+%define parse.lac full
+%define parse.error detailed
 
 /* tokens */
 %token              SEMI
@@ -318,13 +312,13 @@ Program : ExtDefList {
 
     $$ = nodeProgram;
 } 
-| ExtDefList error {
+/* | ExtDefList error {
     if(isNewError(@2.first_line, 'B')) {
         errors[errorCount].lineno = yylineno;
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Unexpected character. \r \n", @2.first_line);
+        printf("Error type B at Line %d: Unexpected character. \n", @2.first_line);
 
         // 对于程序错误 我们依然需要创造一个对应的节点
         // 主要目的是确保我们成功地将所有的节点都组织在一棵树上
@@ -342,7 +336,7 @@ Program : ExtDefList {
     } else {
         $$ = NULL;
     }
-}
+} */
 
 ExtDefList : ExtDef ExtDefList {
     struct SyntaxTreeNode* nodeExtDefList = createNewNode("ExtDefList", NONEPSILON, @$.first_line);
@@ -385,7 +379,7 @@ ExtDef : Specifier ExtDecList SEMI {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Missing \";\" \r \n", @2.first_line);
+        printf("Error type B at Line %d: Missing \";\" \n", @2.first_line);
         struct SyntaxTreeNode* nodeExtDef = createNewNode("ExtDef", NONEPSILON, @2.first_line);
 
         struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @2.first_line);
@@ -461,7 +455,7 @@ StructSpecifier : STRUCT OptTag LC DefList RC {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Missing \"}\". \r \n", @5.first_line);
+        printf("Error type B at Line %d: Missing \"}\". \n", @5.first_line);
         
         struct SyntaxTreeNode* nodeStructSpecifier = createNewNode("StructSpecifier", NONEPSILON, @$.first_line);
         struct SyntaxTreeNode* nodeStruct = createNewNode("STRUCT", NONVALUENODE, @1.first_line);
@@ -538,7 +532,7 @@ VarDec : ID {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Syntax error at index, require INT value. \r \n", @3.first_line);
+        printf("Error type B at Line %d: Syntax error at index, require INT value. \n", @3.first_line);
 
         struct SyntaxTreeNode* nodeVarDec = createNewNode("VarDec", NONEPSILON, @$.first_line);
 
@@ -563,7 +557,7 @@ VarDec : ID {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Missing \"]\". \r \n", @4.first_line);
+        printf("Error type B at Line %d: Missing \"]\". \n", @4.first_line);
 
         struct SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @4.first_line);
         insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeErr);
@@ -611,7 +605,7 @@ FunDec : ID LP VarList RP {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Missing \")\". \r \n", @3.first_line);
+        printf("Error type B at Line %d: Missing \")\". \n", @3.first_line);
 
         struct SyntaxTreeNode* nodeFunDec = createNewNode("FunDec", NONEPSILON, @$.first_line);
         struct SyntaxTreeNode* nodeID = createNewNode("ID", IDNODE, @1.first_line);
@@ -634,7 +628,7 @@ FunDec : ID LP VarList RP {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Missing \")\". \r \n", @4.first_line);
+        printf("Error type B at Line %d: Missing \")\". \n", @4.first_line);
 
         struct SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @4.first_line);
         insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeErr);
@@ -653,7 +647,7 @@ FunDec : ID LP VarList RP {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Syntax error after the \"(\". \r \n", @3.first_line);
+        printf("Error type B at Line %d: Syntax error after the \"(\". \n", @3.first_line);
 
         struct SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @3.first_line);
         insertSyntaxTree((struct SyntaxTreeNode*) $1, nodeErr);
@@ -672,7 +666,7 @@ FunDec : ID LP VarList RP {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Syntax error after the \"(\". \r \n", @3.first_line);
+        printf("Error type B at Line %d: Syntax error after the \"(\". \n", @3.first_line);
 
         struct SyntaxTreeNode* nodeFunDec = createNewNode("FunDec", NONEPSILON, @$.first_line);
 
@@ -698,7 +692,7 @@ FunDec : ID LP VarList RP {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Missing \"(\". \r \n", @2.first_line);
+        printf("Error type B at Line %d: Missing \"(\". \n", @2.first_line);
 
         struct SyntaxTreeNode* nodeFunDec = createNewNode("FunDec", NONEPSILON, @$.first_line);
 
@@ -764,7 +758,7 @@ CompSt : LC DefList StmtList RC {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Missing \"{\". \r \n", @1.first_line);
+        printf("Error type B at Line %d: Missing \"{\". \n", @1.first_line);
 
         struct SyntaxTreeNode* nodeCompSt = createNewNode("CompSt", NONEPSILON, @1.first_line);
         struct SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @1.first_line);
@@ -831,7 +825,7 @@ Stmt : Exp SEMI {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Missing \";\". \r \n", @3.first_line);
+        printf("Error type B at Line %d: Missing \";\". \n", @3.first_line);
 
         struct SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
 
@@ -853,7 +847,7 @@ Stmt : Exp SEMI {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Missing \"(\". \r \n", @2.first_line);
+        printf("Error type B at Line %d: Missing \"(\". \n", @2.first_line);
 
         struct SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @2.first_line);
         insertSyntaxTree((struct SyntaxTreeNode*)$3, nodeErr);
@@ -872,7 +866,7 @@ Stmt : Exp SEMI {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Missing \")\". \r \n", @4.first_line);
+        printf("Error type B at Line %d: Missing \")\". \n", @4.first_line);
 
         struct SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @4.first_line);
         insertSyntaxTree((struct SyntaxTreeNode*)$3, nodeErr);
@@ -925,7 +919,7 @@ Stmt : Exp SEMI {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Missing \";\". \r \n", @2.first_line);
+        printf("Error type B at Line %d: Missing \";\". \n", @2.first_line);
 
         struct SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
 
@@ -945,7 +939,7 @@ Stmt : Exp SEMI {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Syntax error in \"Exp\". \r \n", @1.first_line);
+        printf("Error type B at Line %d: Syntax error in \"Exp\". \n", @1.first_line);
 
         struct SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
         struct SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @1.first_line);
@@ -965,7 +959,7 @@ Stmt : Exp SEMI {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Syntax error after \"else\". \r \n", @3.first_line);
+        printf("Error type B at Line %d: Syntax error after \"else\". \n", @3.first_line);
 
         struct SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
 
@@ -991,7 +985,7 @@ Stmt : Exp SEMI {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Missing \")\". \r \n", @4.first_line);
+        printf("Error type B at Line %d: Missing \")\". \n", @4.first_line);
 
         struct SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
 
@@ -1018,7 +1012,7 @@ Stmt : Exp SEMI {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Syntax error in \"Exp\". \r \n", @7.first_line);
+        printf("Error type B at Line %d: Syntax error in \"Exp\". \n", @7.first_line);
 
         struct SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
 
@@ -1047,7 +1041,7 @@ Stmt : Exp SEMI {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Missing \")\". \r \n", @4.first_line);
+        printf("Error type B at Line %d: Missing \")\". \n", @4.first_line);
 
         struct SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
 
@@ -1091,7 +1085,7 @@ Stmt : Exp SEMI {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Syntax error in \"Exp\". \r \n", @5.first_line);
+        printf("Error type B at Line %d: Syntax error in \"Exp\". \n", @5.first_line);
 
         struct SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
 
@@ -1118,7 +1112,7 @@ Stmt : Exp SEMI {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Missing \")\". \r \n", @4.first_line);
+        printf("Error type B at Line %d: Missing \")\". \n", @4.first_line);
 
         struct SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
 
@@ -1190,7 +1184,7 @@ DecList : Dec {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Missing \",\". \r \n", @2.first_line);
+        printf("Error type B at Line %d: Missing \",\". \n", @2.first_line);
 
         struct SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @2.first_line);
         insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeErr);
@@ -1210,7 +1204,7 @@ DecList : Dec {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Syntax error after \",\". \r \n", @3.first_line);
+        printf("Error type B at Line %d: Syntax error after \",\". \n", @3.first_line);
 
         struct SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @3.first_line);
         insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeErr);
@@ -1248,7 +1242,7 @@ Dec : VarDec {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Missing \"=\". \r \n", @2.first_line);
+        printf("Error type B at Line %d: Missing \"=\". \n", @2.first_line);
 
         struct SyntaxTreeNode* nodeDec = createNewNode("Dec", NONEPSILON, @$.first_line);
 
@@ -1269,7 +1263,7 @@ Dec : VarDec {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Syntax error after \"=\". \r \n", @3.first_line);
+        printf("Error type B at Line %d: Syntax error after \"=\". \n", @3.first_line);
 
         struct SyntaxTreeNode* nodeDec = createNewNode("Dec", NONEPSILON, @$.first_line);
 
@@ -1304,7 +1298,7 @@ Exp : Exp ASSIGNOP Exp {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Syntax error after \"=\". \r \n", @3.first_line);
+        printf("Error type B at Line %d: Syntax error after \"=\". \n", @3.first_line);
 
         struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
 
@@ -1337,7 +1331,7 @@ Exp : Exp ASSIGNOP Exp {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Syntax error after \"&&\". \r \n", @3.first_line);
+        printf("Error type B at Line %d: Syntax error after \"&&\". \n", @3.first_line);
 
         struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
 
@@ -1370,7 +1364,7 @@ Exp : Exp ASSIGNOP Exp {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Syntax error after \"||\". \r \n", @3.first_line);
+        printf("Error type B at Line %d: Syntax error after \"||\". \n", @3.first_line);
 
         struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
 
@@ -1403,7 +1397,7 @@ Exp : Exp ASSIGNOP Exp {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Syntax error after \"Relop\". \r \n", @3.first_line);
+        printf("Error type B at Line %d: Syntax error after \"Relop\". \n", @3.first_line);
 
         struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
 
@@ -1436,7 +1430,7 @@ Exp : Exp ASSIGNOP Exp {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Syntax error after \"+\". \r \n", @3.first_line);
+        printf("Error type B at Line %d: Syntax error after \"+\". \n", @3.first_line);
 
         struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
 
@@ -1469,7 +1463,7 @@ Exp : Exp ASSIGNOP Exp {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Syntax error after \"-\". \r \n", @3.first_line);
+        printf("Error type B at Line %d: Syntax error after \"-\". \n", @3.first_line);
 
         struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
 
@@ -1502,7 +1496,7 @@ Exp : Exp ASSIGNOP Exp {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Syntax error after \"*\". \r \n", @3.first_line);
+        printf("Error type B at Line %d: Syntax error after \"*\". \n", @3.first_line);
 
         struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
 
@@ -1535,7 +1529,7 @@ Exp : Exp ASSIGNOP Exp {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Syntax error after \"/\". \r \n", @3.first_line);
+        printf("Error type B at Line %d: Syntax error after \"/\". \n", @3.first_line);
 
         struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
 
@@ -1579,7 +1573,7 @@ Exp : Exp ASSIGNOP Exp {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Syntax error after \"-\". \r \n", @2.first_line);
+        printf("Error type B at Line %d: Syntax error after \"-\". \n", @2.first_line);
 
         struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
 
@@ -1610,7 +1604,7 @@ Exp : Exp ASSIGNOP Exp {
         errors[errorCount].character = 'B';
         errorCount++;
 
-        printf("Error type B at Line %d: Syntax error after \"!\". \r \n", @2.first_line);
+        printf("Error type B at Line %d: Syntax error after \"!\". \n", @2.first_line);
 
         struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
 
@@ -1802,7 +1796,7 @@ Args : Exp COMMA Args {
         errors[errorCount].character = @2.first_column;
         errorCount++;
 
-        printf("Error type B at Line %d: Missing argument after ',' \r \n", @2.first_line);
+        printf("Error type B at Line %d: Missing argument after ',' \n", @2.first_line);
 
         struct SyntaxTreeNode* nodeArgs = createNewNode("Args", NONEPSILON, @$.first_line);
 
@@ -1824,7 +1818,7 @@ Args : Exp COMMA Args {
         errors[errorCount].character = @2.first_column;
         errorCount++;
 
-        printf("Error type B at Line %d: Missing ',' between arguments \r \n", @2.first_line);
+        printf("Error type B at Line %d: Missing ',' between arguments \n", @2.first_line);
 
         struct SyntaxTreeNode* nodeArgs = createNewNode("Args", NONEPSILON, @$.first_line);
 
@@ -1869,6 +1863,10 @@ Args : Exp COMMA Args {
     return 0;
 } */
 
+void yyerror(char const *s) {
+    printf("Error type B at Line %d: %s \n", yylineno, s);
+}
+
 int isNewError(int errorLineno, const char errorChar) {
     for (int i = 0; i < errorCount; i++) {
         if (errors[i].lineno == errorLineno && errors[i].character == errorChar) {
@@ -1884,12 +1882,12 @@ int yywrap() {
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
-        printf("Usage: %s filename, please try again with a filename as the argument to the program (e.g. test.cmm) \r \n", argv[0]);
+        printf("Usage: %s filename, please try again with a filename as the argument to the program (e.g. test.cmm) \n", argv[0]);
         return 1;
     }
     yyin = fopen(argv[1], "r");
     if (!yyin) {
-        printf("Error: Could not open file %s \r \n", argv[1]);
+        printf("Error: Could not open file %s \n", argv[1]);
         return 1;
     }
     yyrestart(yyin);

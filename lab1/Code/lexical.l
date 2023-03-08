@@ -1,5 +1,5 @@
 %{
-#define YYDEBUG 0
+// #define YYDEBUG 0
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,7 +36,7 @@ int yycolumn = 1;
 %option yylineno
 
 
-WHITE_SPACE         [ \s\t]
+WHITE_SPACE         [ \t]
 DIGIT               [0-9]
 LETTER              [a-zA-Z_]
 DOT                 \.
@@ -104,6 +104,7 @@ OCT                 [0-7]
 "!"                             {RETURN_TOKEN(NOT);}
 int|float                     {
     // printf("TYPE: %s\n", yytext);
+    yylval.string=strdup(yytext);
     RETURN_TOKEN(TYPE);}
 "("                             {RETURN_TOKEN(LP);}
 ")"                             {RETURN_TOKEN(RP);}
@@ -130,13 +131,14 @@ int|float                     {
     RETURN_TOKEN(FLOAT);
 }
 {LETTER}({LETTER}|{DIGIT})*     {
-    yylval.string=yytext;
-    // printf("ID: %s\n", yytext);
+    yylval.string=strdup(yytext);
+    printf("ID: %s\n", yylval.string);
     RETURN_TOKEN(ID);
 }
 
 .                               {
-    if(isNewError(yylineno, 'A')){
+    // FIXME: error type A 但是一行只能一个错误
+    if(isNewError(yylineno, 'B')){
         printf("Error type A at Line %d: Undefined token \"%s\".\n", yylineno, yytext);
     }
     return yytext[0];
