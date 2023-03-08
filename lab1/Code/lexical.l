@@ -1,4 +1,6 @@
 %{
+#define YYDEBUG 0
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,6 +48,43 @@ OCT                 [0-7]
 
 {WHITE_SPACE}+                  ;// ignore white space
 \n                              {yycolumn = 1;}
+
+"//"                            {
+    char c = input();
+    while (c != EOF) {
+        if (c == '\n') {
+            break;
+        }
+        c = input();
+    }
+}
+"/\*"                           {
+    char c = input();
+    while(1) {
+        if (c == '*') {
+            c = input();
+            if (c == '/') {
+                break;
+            }else{
+                unput(c);
+            }
+        }else if (c == EOF) {
+            if(isNewError(yylineno, 'B')){
+                printf("Error type B at Line %d: Block comment is not closed.\n", yylineno);
+            }
+            break;
+        }
+        c = input();
+    }
+    return yytext[0];
+}
+"\*/"                           {
+    if(isNewError(yylineno, 'B')){
+        printf("Error type B at Line %d: Block comment is not closed.\n", yylineno);
+    }
+    return yytext[0];
+}
+
 ";"                             {RETURN_TOKEN(SEMI);}
 ","                             {RETURN_TOKEN(COMMA);}
 "="                             {RETURN_TOKEN(ASSIGNOP);}
@@ -96,43 +135,6 @@ int|float                     {
     RETURN_TOKEN(ID);
 }
 
-"//"                            {
-    // RETURN_TOKEN(LINECOMMENT);
-    char c = input();
-    while (c != EOF) {
-        if (c == '\n') {
-            break;
-        }
-        c = input();
-    }
-}
-"/\*"                           {
-    // RETURN_TOKEN(BLOCKCOMMENT);
-    char c = input();
-    while(1) {
-        if (c == '*') {
-            c = input();
-            if (c == '/') {
-                break;
-            }else{
-                unput(c);
-            }
-        }else if (c == EOF) {
-            if(isNewError(yylineno, 'B')){
-                printf("Error type B at Line %d: Block comment is not closed.\n", yylineno);
-            }
-            break;
-        }
-        c = input();
-    }
-    return yytext[0];
-}
-"\*/"                           {
-    if(isNewError(yylineno, 'B')){
-        printf("Error type B at Line %d: Block comment is not closed.\n", yylineno);
-    }
-    return yytext[0];
-}
 .                               {
     if(isNewError(yylineno, 'A')){
         printf("Error type A at Line %d: Undefined token \"%s\".\n", yylineno, yytext);
