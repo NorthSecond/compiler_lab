@@ -132,7 +132,7 @@ int|float                     {
 }
 {LETTER}({LETTER}|{DIGIT})*     {
     yylval.string=strdup(yytext);
-    printf("ID: %s\n", yylval.string);
+    // printf("ID: %s\n", yylval.string);
     RETURN_TOKEN(ID);
 }
 
