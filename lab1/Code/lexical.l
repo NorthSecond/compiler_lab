@@ -6,9 +6,9 @@
 
 #include "syntax.tab.h"
 
-extern yylval;
+extern YYSTYPE yylval;
 
-extern int yyerror(size_t err_line, char err_char);
+extern int isNewError(int err_line, char err_char);
 
 #if YYDEBUG > 0
 #define debug_printf  printf
@@ -34,7 +34,7 @@ int yycolumn = 1;
 %option yylineno
 
 
-WHITE_SPACE         [ \s]
+WHITE_SPACE         [ \s\t]
 DIGIT               [0-9]
 LETTER              [a-zA-Z_]
 DOT                 \.
@@ -64,7 +64,7 @@ OCT                 [0-7]
 {DOT}                           {RETURN_TOKEN(DOT);}
 "!"                             {RETURN_TOKEN(NOT);}
 int|float                     {
-    printf("TYPE: %s\n", yytext);
+    // printf("TYPE: %s\n", yytext);
     RETURN_TOKEN(TYPE);}
 "("                             {RETURN_TOKEN(LP);}
 ")"                             {RETURN_TOKEN(RP);}
@@ -118,7 +118,7 @@ int|float                     {
                 unput(c);
             }
         }else if (c == EOF) {
-            if(yyerror(yylineno, 'B')){
+            if(isNewError(yylineno, 'B')){
                 printf("Error type B at Line %d: Block comment is not closed.\n", yylineno);
             }
             break;
@@ -128,13 +128,13 @@ int|float                     {
     return yytext[0];
 }
 "\*/"                           {
-    if(yyerror(yylineno, 'B')){
+    if(isNewError(yylineno, 'B')){
         printf("Error type B at Line %d: Block comment is not closed.\n", yylineno);
     }
     return yytext[0];
 }
 .                               {
-    if(yyerror(yylineno, 'A')){
+    if(isNewError(yylineno, 'A')){
         printf("Error type A at Line %d: Undefined token \"%s\".\n", yylineno, yytext);
     }
     return yytext[0];
