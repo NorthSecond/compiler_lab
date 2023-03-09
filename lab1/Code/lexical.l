@@ -33,6 +33,7 @@ int yycolumn = 1;
 WHITE_SPACE         [ \t]
 DIGIT               [0-9]
 LETTER              [a-zA-Z_]
+ALNUM               [a-zA-Z0-9_]
 DOT                 \.
 QUOTE               [\'\"]
 HEX                 [0-9a-fA-F]
@@ -70,13 +71,13 @@ OCT                 [0-7]
         }
         c = input();
     }
-    return yytext[0];
+    // return yytext[0];
 }
 "\*/"                           {
     if(isNewError(yylineno, 'B')){
         printf("Error type B at Line %d: Block comment is not closed.\n", yylineno);
     }
-    return yytext[0];
+    // return yytext[0];
 }
 
 ";"                             {RETURN_TOKEN(SEMI);}
@@ -112,14 +113,95 @@ int|float                     {
 "else"                          {RETURN_TOKEN(ELSE);}
 "while"                         {RETURN_TOKEN(WHILE);}
 
-0{OCT}*                         |
-0[Xx]{HEX}+                     |
-[1-9]{DIGIT}*                   {
+{DIGIT}+        |
+0[Xx]{ALNUM}*   {
+    // UPDATE: PPT里要求这种必须是错误类型 A
+    // 不能放到语法分析处理了
+    /*
+    0{OCT}*                         |
+    0[Xx]{HEX}+                     |
+    [1-9]{DIGIT}*
+    */
+    if(yytext[0] == '0'){
+        if(strlen(yytext) == 1){
+            yylval.number=0;
+            RETURN_TOKEN(INT);
+        }
+        // TODO: strtol 需不需要前进一下位数
+        if(yytext[1] == 'x' || yytext[1] == 'X'){
+            // 十六进制
+            if(strlen(yytext) == 2){
+                if(isNewError(yylineno, 'B')){
+                    printf("Error type A at Line %d: Illegal hexadecimal number \"%s\".\n", yylineno, yytext);
+                    return;
+                }
+            }
+            for(int i = 2; i< strlen(yytext); i++){
+                if(!isxdigit(yytext[i])){
+                    if(isNewError(yylineno, 'B')){
+                        printf("Error type A at Line %d: Illegal hexadecimal number \"%s\".\n", yylineno, yytext);
+                        return;
+                    }
+                }
+            }
+            yylval.number=strtol(yytext, NULL, 16);
+            RETURN_TOKEN(INT);
+        }
+        // 八进制
+        for(int i = 1; i< strlen(yytext); i++){
+            if(yytext[i] < '0' || yytext[i] > '7'){
+                if(isNewError(yylineno, 'B')){
+                    printf("Error type A at Line %d: Illegal octal number \"%s\".\n", yylineno, yytext);
+                    return;
+                }
+            }
+        }
+
+        yylval.number=strtol(yytext, NULL, 8);
+        RETURN_TOKEN(INT);
+    }
+
     yylval.number=atoi(yytext);
     RETURN_TOKEN(INT);
 }
-{DIGIT}*{DOT}{DIGIT}*[Ee][+-]?{DIGIT}+     |
-(0|[1-9]{DIGIT}*){DOT}{DIGIT}+             {
+{DIGIT}*{DOT}{DIGIT}*[Ee][+-]?{DIGIT}*    |
+{DIGIT}*{DOT}{DIGIT}*                     {
+    // 和上面一样的改动
+    // {DIGIT}*{DOT}{DIGIT}*[Ee][+-]?{DIGIT}+     |
+    // (0|[1-9]{DIGIT}*){DOT}{DIGIT}+
+
+    size_t len = strlen(yytext);
+    if(yytext[len-1] == 'e' || yytext[len-1] == 'E' || yytext[len-1] == '.' || yytext[len-1] == '+' || yytext[len-1] == '-'){
+        if(isNewError(yylineno, 'B')){
+            printf("Error type A at Line %d: Illegal floating point number \"%s\".\n", yylineno, yytext);
+            return;
+        }
+    }
+
+    
+    if(yytext[0] == '.'){
+        // 需要检查后面带不带 e/E
+        bool hasE = false;
+        for(int i = 1; i < len; i++){
+            if(yytext[i] == 'e' || yytext[i] == 'E'){
+                if(i == 1) {
+                    if(isNewError(yylineno, 'B')){
+                        printf("Error type A at Line %d: Illegal floating point number \"%s\".\n", yylineno, yytext);
+                        return;
+                    }
+                }
+                hasE = true;
+                break;
+            }
+        }
+        if(!hasE){
+            if(isNewError(yylineno, 'B')){
+                printf("Error type A at Line %d: Illegal floating point number \"%s\".\n", yylineno, yytext);
+                return;
+            }
+        }
+    }
+
     yylval.floats=atof(yytext);
     // printf("FLOAT: %s\n", yytext);
     RETURN_TOKEN(FLOAT);

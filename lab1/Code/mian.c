@@ -12,13 +12,13 @@ extern int yyrestart(FILE *input_file);
 
 int main(int argc, char *argv[])
 {
-    syntaxTreeRoot = NULL;
     if (argc != 2)
     {
         printf("Usage: %s filename, please try again with a filename as the argument to the program (e.g. test.cmm) \n", argv[0]);
         return 1;
     }
     yyin = fopen(argv[1], "r");
+    syntaxTreeRoot = NULL;
     if (!yyin)
     {
         printf("Error: Could not open file %s \n", argv[1]);
