@@ -2,15 +2,12 @@
 
 #include "syntaxTreeNode.h"
 #include "syntax.tab.h"
-// #include "lex.yy.c"
-
-extern int yyparse();
-extern int errorCount;
-
-// extern struct SyntaxTreeNode *syntaxTreeRoot;
 
 extern FILE *yyin;
 extern char *yytext;
+extern int errorCount;
+
+extern int yyparse();
 extern int yyrestart(FILE *input_file);
 
 int main(int argc, char *argv[])

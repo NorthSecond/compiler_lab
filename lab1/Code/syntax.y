@@ -16,10 +16,8 @@ char errorChar = '\0';
 void yyerror(char const * s);
 int isNewError(int errorLineno, const char errorChar);
 
-extern int yywrap();
 extern int yylineno;
 
-// extern struct SyntaxTreeNode *syntaxTreeRoot;
 %}
 
 %union {
@@ -773,9 +771,5 @@ int isNewError(int errorLineno, const char errorChar) {
     errors[errorCount].lineno = errorLineno;
     errors[errorCount].character = errorChar;
     errorCount++;
-    return 1;
-}
-
-int yywrap() {
     return 1;
 }

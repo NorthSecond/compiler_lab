@@ -67,6 +67,7 @@ void insertSyntaxTree(struct SyntaxTreeNode *node, struct SyntaxTreeNode *root);
 // 创建新的语法树节点
 struct SyntaxTreeNode *createNewNode(char *name, enum SyntaxTreeNodeType type, int lineno);
 
+// 全局变量 语法树的根节点
 extern struct SyntaxTreeNode *syntaxTreeRoot;
 
-#endif // !SYNTAX
+#endif // !SYNTAXTREENODE_H

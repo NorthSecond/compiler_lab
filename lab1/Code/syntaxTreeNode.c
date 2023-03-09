@@ -35,7 +35,7 @@ void printNodeInfo(struct SyntaxTreeNode *node, int indent)
     case EPSILON:
         // 无需打印语法单元对应的信息
 #if YYDEBUG > 0
-        printf("%s (%d) \n", node->name, node->lineno);
+        printf("EPSILON %s (%d) \n", node->name, node->lineno);
 #endif // YYDEBUG
         break;
 
