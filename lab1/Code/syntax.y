@@ -934,25 +934,6 @@ Args : Exp COMMA Args {
 
 %%
 
-/* int yyparse() {
-    yyscan_t scanner;
-    yylex_init(&scanner);
-    yyset_in(yyin, scanner);
-    yyparse(scanner);
-    yylex_destroy(scanner);
-    return 0;
-} */
-
-/* int yyerror(size_t err_line, const char err_char) {
-    if (isNewError(err_line, err_char)) {
-        errors[errorCount].lineno = err_line;
-        errors[errorCount].character = err_char;
-        errorCount++;
-        return 1;
-    }
-    return 0;
-} */
-
 void yyerror(char const *s) {
     if(isNewError(yylineno, 'B')) {
         printf("Error type B at Line %d: %s \n", yylineno, s);
