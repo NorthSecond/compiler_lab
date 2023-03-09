@@ -1,9 +1,5 @@
 %{
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-
+#include "includes.h"
 #include "syntax.tab.h"
 
 extern YYSTYPE yylval;

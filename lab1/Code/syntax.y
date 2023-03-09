@@ -1,18 +1,7 @@
 %locations
 %{
-#define LAB1
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-
 #include "lex.yy.c"
-
-#define MAX_IDENT_LEN 32
-#define MAX_NUM_LEN 32
-#define MAX_ERR_NUM 10000
-
+#include "syntaxTreeNode.h"
 
 struct Error {
     int lineno;
@@ -30,78 +19,7 @@ int isNewError(int errorLineno, const char errorChar);
 extern int yywrap();
 extern int yylineno;
 
-
-FILE *yyin;
-// out is not used
-// we use printf instead
-// FILE *yyout;
-
-char *yytext;
-
-/**
- * 词法单元的类型
- * NONEPSILON: 没有产生 \epsilon 的语法单元
- * EPSILON: 产生 \eplison 的语法单元
- * IDNODE: 词法单元ID
- * TYPENODE: 词法单元TYPE
- * INTNODE: 词法单元INT
- * FLOATNODE: 词法单元FLOAT
- * NONVALUENODE: 不产生语法单元的词法单元
- */
-enum SyntaxTreeNodeType { 
-    NONEPSILON,
-    EPSILON,
-    IDNODE,
-    TYPENODE,
-    INTNODE,
-    FLOATNODE,
-    NONVALUENODE
-};
-
-// 语法树的定义
-// 语法树是多叉树
-// 对应行号 子节点数量 子节点指针
-struct SyntaxTreeNode
-{
-    char *name;
-    enum SyntaxTreeNodeType type;
-    int lineno;
-    union {
-        int intVal;
-        float floatVal;
-        char *stringVal;
-    };
-    int childCount;
-    struct SyntaxTreeNode *child;
-    struct SyntaxTreeNode *sibling;
-};
-
-// 全局变量 语法树的根节点
-struct SyntaxTreeNode *syntaxTreeRoot = NULL;
-
-// 语法树节点的创建
-struct SyntaxTreeNode *createSyntaxTree(char *name, enum SyntaxTreeNodeType type, int lineno);
-
-// 打印节点信息
-// 考虑一下要不要放这里 还是换个位置提出来到别的文件里面
-#ifdef LAB1
-void printNodeInfo(struct SyntaxTreeNode *node, int indent);
-#endif
-
-// 语法树的遍历
-// 这里使用先序遍历
-void traverseSyntaxTree(struct SyntaxTreeNode *root, int indent);
-
-// 语法树的销毁
-void destroySyntaxTree(struct SyntaxTreeNode *root);
-
-// 语法树的插入
-// 对应多叉树的插入
-void insertSyntaxTree(struct SyntaxTreeNode *node, struct SyntaxTreeNode *root);
-
-// create new node
-// 创建新的语法树节点
-struct SyntaxTreeNode *createNewNode(char *name, enum SyntaxTreeNodeType type, int lineno);
+// extern struct SyntaxTreeNode *syntaxTreeRoot;
 %}
 
 %union {
@@ -140,10 +58,10 @@ struct SyntaxTreeNode *createNewNode(char *name, enum SyntaxTreeNodeType type, i
                     WHILE       "'while'"
 
 /* numbers */
-%token <number>     INT         
-%token <floats>     FLOAT       
-%token <string>     ID
-%token <string>     TYPE
+%token <number>     INT         "int value"
+%token <floats>     FLOAT       "float value"
+%token <string>     ID          "identifier"
+%token <string>     TYPE        "type"
 
 /* precedence and associativity */
 
@@ -840,69 +758,6 @@ Args : Exp COMMA Args {
 
 %%
 
-struct SyntaxTreeNode *createSyntaxTree(char *name, enum SyntaxTreeNodeType type, int lineno)
-{
-    struct SyntaxTreeNode *node = (struct SyntaxTreeNode *)malloc(sizeof(struct SyntaxTreeNode));
-    node->name = name;
-    node->type = type;
-    node->lineno = lineno;
-    node->childCount = 0;
-    node->child = NULL;
-    node->sibling = NULL;
-    return node;
-}
-
-#ifdef LAB1
-void printNodeInfo(struct SyntaxTreeNode *node, int indent)
-{
-    if (node == NULL)
-    {
-        return;
-    }
-    if(node->type != EPSILON) {
-        for(int i = 0; i < indent; i++) {
-            printf("  ");
-        }
-    }
-    switch (node->type)
-    {
-    case NONEPSILON:
-        // 打印语法单元的名称和对应在输入文件中的行号
-        printf("%s (%d) \n", node->name, node->lineno);
-        break;
-    case EPSILON:
-        // 无需打印语法单元对应的信息
-#if YYDEBUG > 0
-        printf("%s (%d) \n", node->name, node->lineno);
-#endif // YYDEBUG
-        break;
-
-    // 如果当前节点是词法单元 无需打印行号
-    case IDNODE:
-        // 额外打印对应的词素
-        printf("%s: %s \n", node->name, node->stringVal);
-        break;
-    case TYPENODE:
-        // 额外打印对应的类型
-        printf("%s: %s \n", node->name, node->stringVal);
-        break;
-    case INTNODE:
-        // 额外打印对应的整数值
-        printf("%s: %d \n", node->name, node->intVal);
-        break;
-    case FLOATNODE:
-        // 额外打印对应的浮点数值
-        printf("%s: %f \n", node->name, node->floatVal);
-        break;
-    case NONVALUENODE:
-        printf("%s \n", node->name);
-        break;
-    default:
-        break;
-    }
-}
-#endif
-
 void yyerror(char const *s) {
     if(isNewError(yylineno, 'B')) {
         printf("Error type B at Line %d: %s \n", yylineno, s);
@@ -923,94 +778,4 @@ int isNewError(int errorLineno, const char errorChar) {
 
 int yywrap() {
     return 1;
-}
-
-void traverseSyntaxTree(struct SyntaxTreeNode *root, int indent)
-{
-    if (root == NULL)
-    {
-        return;
-    }
-    
-#ifdef LAB1
-    // LAB 1: 打印节点信息
-    printNodeInfo(root, indent);
-#endif
-    
-    for(struct SyntaxTreeNode *p = root->child; p != NULL; p = p->sibling)
-    {
-        traverseSyntaxTree(p, indent + 1);
-    }
-}
-
-void destroySyntaxTree(struct SyntaxTreeNode *root)
-{
-    if (root == NULL)
-    {
-        return;
-    }
-    destroySyntaxTree(root->child);
-    destroySyntaxTree(root->sibling);
-    free(root);
-}
-
-void insertSyntaxTree(struct SyntaxTreeNode *node, struct SyntaxTreeNode *root)
-{
-    if (root == NULL || node == NULL)
-    {
-#if YYDEBUG > 0
-        printf("insert error: root or node is NULL \n");
-#endif // YYDEBUG
-        return;
-    }
-    if (root->child == NULL)
-    {
-        root->child = node;
-    }
-    else
-    {
-        struct SyntaxTreeNode *p = root->child;
-        while (p->sibling != NULL)
-        {
-            p = p->sibling;
-        }
-        p->sibling = node;
-    }
-    root->childCount++;
-}
-
-struct SyntaxTreeNode *createNewNode(char *name, enum SyntaxTreeNodeType type, int lineno)
-{
-    struct SyntaxTreeNode *node = (struct SyntaxTreeNode *)malloc(sizeof(struct SyntaxTreeNode));
-    node->name = name;
-    node->type = type;
-    node->lineno = lineno;
-    node->childCount = 0;
-    node->child = NULL;
-    node->sibling = NULL;
-    return node;
-}
-
-int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        printf("Usage: %s filename, please try again with a filename as the argument to the program (e.g. test.cmm) \n", argv[0]);
-        return 1;
-    }
-    yyin = fopen(argv[1], "r");
-    if (!yyin) {
-        printf("Error: Could not open file %s \n", argv[1]);
-        return 1;
-    }
-    yyrestart(yyin);
-    yyparse();
-    fclose(yyin);
-
-#ifdef LAB1
-    if (errorCount == 0) {
-        traverseSyntaxTree(syntaxTreeRoot, 0);
-    }
-#endif
-
-    destroySyntaxTree(syntaxTreeRoot);
-    return 0;
 }
