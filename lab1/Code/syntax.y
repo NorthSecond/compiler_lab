@@ -1,5 +1,7 @@
 %locations
 %{
+#define LAB1
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +13,6 @@
 #define MAX_NUM_LEN 32
 #define MAX_ERR_NUM 10000
 
-#define LAB1
 
 struct Error {
     int lineno;
@@ -79,144 +80,28 @@ struct SyntaxTreeNode
 struct SyntaxTreeNode *syntaxTreeRoot = NULL;
 
 // 语法树节点的创建
-struct SyntaxTreeNode *createSyntaxTree(char *name, enum SyntaxTreeNodeType type, int lineno)
-{
-    struct SyntaxTreeNode *node = (struct SyntaxTreeNode *)malloc(sizeof(struct SyntaxTreeNode));
-    node->name = name;
-    node->type = type;
-    node->lineno = lineno;
-    node->childCount = 0;
-    node->child = NULL;
-    node->sibling = NULL;
-    return node;
-}
+struct SyntaxTreeNode *createSyntaxTree(char *name, enum SyntaxTreeNodeType type, int lineno);
 
-#ifdef LAB1
 // 打印节点信息
 // 考虑一下要不要放这里 还是换个位置提出来到别的文件里面
-void printNodeInfo(struct SyntaxTreeNode *node, int indent)
-{
-    if (node == NULL)
-    {
-        return;
-    }
-    if(node->type != EPSILON) {
-        for(int i = 0; i < indent; i++) {
-            printf("  ");
-        }
-    }
-    switch (node->type)
-    {
-    case NONEPSILON:
-        // 打印语法单元的名称和对应在输入文件中的行号
-        printf("%s (%d) \n", node->name, node->lineno);
-        break;
-    case EPSILON:
-        // 无需打印语法单元对应的信息
-#ifdef YYDEBUG
-        printf("%s (%d) \n", node->name, node->lineno);
-#endif // YYDEBUG
-        break;
-
-    // 如果当前节点是词法单元 无需打印行号
-    case IDNODE:
-        // 额外打印对应的词素
-        printf("%s: %s \n", node->name, node->stringVal);
-        break;
-    case TYPENODE:
-        // 额外打印对应的类型
-        printf("%s: %s \n", node->name, node->stringVal);
-        break;
-    case INTNODE:
-        // 额外打印对应的整数值
-        printf("%s: %d \n", node->name, node->intVal);
-        break;
-    case FLOATNODE:
-        // 额外打印对应的浮点数值
-        printf("%s: %f \n", node->name, node->floatVal);
-        break;
-    case NONVALUENODE:
-        printf("%s \n", node->name);
-        break;
-    default:
-        break;
-    }
-}
+#ifdef LAB1
+void printNodeInfo(struct SyntaxTreeNode *node, int indent);
 #endif
 
 // 语法树的遍历
 // 这里使用先序遍历
-void traverseSyntaxTree(struct SyntaxTreeNode *root, int indent)
-{
-    if (root == NULL)
-    {
-        return;
-    }
-    
-#ifdef LAB1
-    // LAB 1: 打印节点信息
-    printNodeInfo(root, indent);
-#endif
-    
-    for(struct SyntaxTreeNode *p = root->child; p != NULL; p = p->sibling)
-    {
-        traverseSyntaxTree(p, indent + 1);
-    }
-}
+void traverseSyntaxTree(struct SyntaxTreeNode *root, int indent);
 
 // 语法树的销毁
-void destroySyntaxTree(struct SyntaxTreeNode *root)
-{
-    if (root == NULL)
-    {
-        return;
-    }
-    destroySyntaxTree(root->child);
-    destroySyntaxTree(root->sibling);
-    free(root);
-}
+void destroySyntaxTree(struct SyntaxTreeNode *root);
 
 // 语法树的插入
 // 对应多叉树的插入
-void insertSyntaxTree(struct SyntaxTreeNode *node, struct SyntaxTreeNode *root)
-{
-    if (root == NULL || node == NULL)
-    {
-#if YYDEBUG > 0
-        printf("insert error: root or node is NULL \n");
-#endif // YYDEBUG
-        return;
-    }
-    if (root->child == NULL)
-    {
-        root->child = node;
-    }
-    else
-    {
-        struct SyntaxTreeNode *p = root->child;
-        while (p->sibling != NULL)
-        {
-            p = p->sibling;
-        }
-        p->sibling = node;
-    }
-    root->childCount++;
-}
+void insertSyntaxTree(struct SyntaxTreeNode *node, struct SyntaxTreeNode *root);
 
 // create new node
 // 创建新的语法树节点
-struct SyntaxTreeNode *createNewNode(char *name, enum SyntaxTreeNodeType type, int lineno)
-{
-    struct SyntaxTreeNode *node = (struct SyntaxTreeNode *)malloc(sizeof(struct SyntaxTreeNode));
-    node->name = name;
-    node->type = type;
-    node->lineno = lineno;
-    node->childCount = 0;
-    node->child = NULL;
-    node->sibling = NULL;
-    return node;
-}
-
+struct SyntaxTreeNode *createNewNode(char *name, enum SyntaxTreeNodeType type, int lineno);
 %}
 
 %union {
@@ -230,33 +115,33 @@ struct SyntaxTreeNode *createNewNode(char *name, enum SyntaxTreeNodeType type, i
 %define parse.error detailed
 
 /* tokens */
-%token              SEMI
-                    COMMA
-                    ASSIGNOP
-                    RELOP
-                    PLUS
-                    MINUS
-                    STAR
-                    DIV
-                    AND
-                    OR
-                    DOT
-                    NOT
-                    LP
-                    RP
-                    LB
-                    RB
-                    LC
-                    RC
-                    STRUCT
-                    RETURN
-                    IF
-                    ELSE
-                    WHILE
+%token              SEMI        "';'"
+                    COMMA       "','"
+                    ASSIGNOP    "'='"
+                    RELOP       "RELOP"
+                    PLUS        "'+'"
+                    MINUS       "'-'"
+                    STAR        "'*'"
+                    DIV         "'/'"
+                    AND         "'&&'"
+                    OR          "'||'"
+                    DOT         "'.'"
+                    NOT         "'!'"
+                    LP          "'('"
+                    RP          "')'"
+                    LB          "'['"
+                    RB          "']'"
+                    LC          "'{'"
+                    RC          "'}'"
+                    STRUCT      "struct"
+                    RETURN      "return"
+                    IF          "'if'"
+                    ELSE        "'else'"
+                    WHILE       "'while'"
 
 /* numbers */
-%token <number>     INT
-%token <floats>     FLOAT
+%token <number>     INT         
+%token <floats>     FLOAT       
 %token <string>     ID
 %token <string>     TYPE
 
@@ -275,8 +160,6 @@ struct SyntaxTreeNode *createNewNode(char *name, enum SyntaxTreeNodeType type, i
                     LP 
                     RP
 %nonassoc           ELSE
-                    error
-                    LOWER_THAN_ELSE
 
 /* non-terminals */
 %type <type_pnode> Program
@@ -312,6 +195,7 @@ Program : ExtDefList {
 
     $$ = nodeProgram;
 } 
+;
 
 ExtDefList : ExtDef ExtDefList {
     struct SyntaxTreeNode* nodeExtDefList = createNewNode("ExtDefList", NONEPSILON, @$.first_line);
@@ -322,6 +206,7 @@ ExtDefList : ExtDef ExtDefList {
 | {
     $$ = NULL;
 }
+;
 
 ExtDef : Specifier ExtDecList SEMI {
     struct SyntaxTreeNode* nodeExtDef = createNewNode("ExtDef", NONEPSILON, @$.first_line);
@@ -348,6 +233,7 @@ ExtDef : Specifier ExtDecList SEMI {
 
     $$ = nodeExtDef;
 }
+;
 
 ExtDecList : VarDec {
     struct SyntaxTreeNode* nodeExtDecList = createNewNode("ExtDecList", NONEPSILON, @$.first_line);
@@ -364,6 +250,7 @@ ExtDecList : VarDec {
 
     $$ = nodeExtDecList;
 }
+;
 
 // Specifiers
 Specifier : TYPE {
@@ -380,6 +267,7 @@ Specifier : TYPE {
 
     $$ = nodeSpecifier;
 }
+;
 
 StructSpecifier : STRUCT OptTag LC DefList RC {
     struct SyntaxTreeNode* nodeStructSpecifier = createNewNode("StructSpecifier", NONEPSILON, @$.first_line);
@@ -405,6 +293,7 @@ StructSpecifier : STRUCT OptTag LC DefList RC {
 
     $$ = nodeStructSpecifier;
 }
+;
 
 OptTag : ID {
     struct SyntaxTreeNode* nodeOptTag = createNewNode("OptTag", NONEPSILON, @$.first_line);
@@ -421,6 +310,7 @@ OptTag : ID {
     // $$ = nodeOptTag;
     $$ = NULL;
 }
+;
 
 Tag : ID {
     struct SyntaxTreeNode* nodeTag = createNewNode("Tag", NONEPSILON, @$.first_line);
@@ -431,6 +321,7 @@ Tag : ID {
 
     $$ = nodeTag;
 }
+;
 
 // Declarators
 VarDec : ID {
@@ -456,6 +347,7 @@ VarDec : ID {
 
     $$ = nodeVarDec;
 }
+;
 
 FunDec : ID LP VarList RP {
     struct SyntaxTreeNode* nodeFunDec = createNewNode("FunDec", NONEPSILON, @$.first_line);
@@ -485,6 +377,7 @@ FunDec : ID LP VarList RP {
 
     $$ = nodeFunDec;
 }
+;
 
 
 VarList : ParamDec COMMA VarList {
@@ -504,6 +397,7 @@ VarList : ParamDec COMMA VarList {
 
     $$ = nodeVarList;
 }
+;
 
 ParamDec : Specifier VarDec {
     struct SyntaxTreeNode* nodeParamDec = createNewNode("ParamDec", NONEPSILON, @$.first_line);
@@ -513,6 +407,7 @@ ParamDec : Specifier VarDec {
 
     $$ = nodeParamDec;
 }
+;
 
 // Statements
 CompSt : LC DefList StmtList RC {
@@ -527,6 +422,7 @@ CompSt : LC DefList StmtList RC {
 
     $$ = nodeCompSt;
 }
+;
 
 StmtList : Stmt StmtList {
     struct SyntaxTreeNode* nodeStmtList = createNewNode("StmtList", NONEPSILON, @$.first_line);
@@ -544,6 +440,7 @@ StmtList : Stmt StmtList {
     // $$ = nodeStmtList;
     $$ = NULL;
 }
+;
 
 Stmt : Exp SEMI {
     struct SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
@@ -569,6 +466,21 @@ Stmt : Exp SEMI {
     insertSyntaxTree(nodeRETURN, nodeStmt);
     insertSyntaxTree((struct SyntaxTreeNode*)$2, nodeStmt);
     insertSyntaxTree(nodeSEMI, nodeStmt);
+
+    $$ = nodeStmt;
+}
+| IF LP Exp RP Stmt {
+    struct SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeIF = createNewNode("IF", NONVALUENODE, @1.first_line);
+    struct SyntaxTreeNode* nodeLP = createNewNode("LP", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeRP = createNewNode("RP", NONVALUENODE, @4.first_line);
+
+    insertSyntaxTree(nodeIF, nodeStmt);
+    insertSyntaxTree(nodeLP, nodeStmt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$3, nodeStmt);
+    insertSyntaxTree(nodeRP, nodeStmt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$5, nodeStmt);
 
     $$ = nodeStmt;
 }
@@ -605,20 +517,8 @@ Stmt : Exp SEMI {
 
     $$ = nodeStmt;
 }
-| IF LP Exp RP Stmt %prec LOWER_THAN_ELSE {
-    struct SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
-    struct SyntaxTreeNode* nodeIF = createNewNode("IF", NONVALUENODE, @1.first_line);
-    struct SyntaxTreeNode* nodeLP = createNewNode("LP", NONVALUENODE, @2.first_line);
-    struct SyntaxTreeNode* nodeRP = createNewNode("RP", NONVALUENODE, @4.first_line);
+;
 
-    insertSyntaxTree(nodeIF, nodeStmt);
-    insertSyntaxTree(nodeLP, nodeStmt);
-    insertSyntaxTree((struct SyntaxTreeNode*)$3, nodeStmt);
-    insertSyntaxTree(nodeRP, nodeStmt);
-    insertSyntaxTree((struct SyntaxTreeNode*)$5, nodeStmt);
-
-    $$ = nodeStmt;
-}
 // Local Definitions
 DefList : Def DefList {
     struct SyntaxTreeNode* nodeDefList = createNewNode("DefList", NONEPSILON, @$.first_line);
@@ -633,6 +533,7 @@ DefList : Def DefList {
     // $$ = nodeDefList;
     $$ = NULL;
 }
+;
 
 Def : Specifier DecList SEMI {
     struct SyntaxTreeNode* nodeDef = createNewNode("Def", NONEPSILON, @$.first_line);
@@ -645,6 +546,7 @@ Def : Specifier DecList SEMI {
 
     $$ = nodeDef;
 }
+;
 
 DecList : Dec {
     struct SyntaxTreeNode* nodeDecList = createNewNode("DecList", NONEPSILON, @$.first_line);
@@ -663,6 +565,8 @@ DecList : Dec {
 
     $$ = nodeDecList;
 }
+;
+
 Dec : VarDec {
     struct SyntaxTreeNode* nodeDec = createNewNode("Dec", NONEPSILON, @$.first_line);
 
@@ -681,6 +585,7 @@ Dec : VarDec {
 
     $$ = nodeDec;
 }
+;
 
 // Expressions
 Exp : Exp ASSIGNOP Exp {
@@ -911,6 +816,7 @@ Exp : Exp ASSIGNOP Exp {
 
     $$ = nodeExp;
 }
+;
 
 Args : Exp COMMA Args {
     struct SyntaxTreeNode* nodeArgs = createNewNode("Args", NONEPSILON, @$.first_line);
@@ -930,9 +836,72 @@ Args : Exp COMMA Args {
 
     $$ = nodeArgs;
 }
-
+;
 
 %%
+
+struct SyntaxTreeNode *createSyntaxTree(char *name, enum SyntaxTreeNodeType type, int lineno)
+{
+    struct SyntaxTreeNode *node = (struct SyntaxTreeNode *)malloc(sizeof(struct SyntaxTreeNode));
+    node->name = name;
+    node->type = type;
+    node->lineno = lineno;
+    node->childCount = 0;
+    node->child = NULL;
+    node->sibling = NULL;
+    return node;
+}
+
+#ifdef LAB1
+void printNodeInfo(struct SyntaxTreeNode *node, int indent)
+{
+    if (node == NULL)
+    {
+        return;
+    }
+    if(node->type != EPSILON) {
+        for(int i = 0; i < indent; i++) {
+            printf("  ");
+        }
+    }
+    switch (node->type)
+    {
+    case NONEPSILON:
+        // 打印语法单元的名称和对应在输入文件中的行号
+        printf("%s (%d) \n", node->name, node->lineno);
+        break;
+    case EPSILON:
+        // 无需打印语法单元对应的信息
+#if YYDEBUG > 0
+        printf("%s (%d) \n", node->name, node->lineno);
+#endif // YYDEBUG
+        break;
+
+    // 如果当前节点是词法单元 无需打印行号
+    case IDNODE:
+        // 额外打印对应的词素
+        printf("%s: %s \n", node->name, node->stringVal);
+        break;
+    case TYPENODE:
+        // 额外打印对应的类型
+        printf("%s: %s \n", node->name, node->stringVal);
+        break;
+    case INTNODE:
+        // 额外打印对应的整数值
+        printf("%s: %d \n", node->name, node->intVal);
+        break;
+    case FLOATNODE:
+        // 额外打印对应的浮点数值
+        printf("%s: %f \n", node->name, node->floatVal);
+        break;
+    case NONVALUENODE:
+        printf("%s \n", node->name);
+        break;
+    default:
+        break;
+    }
+}
+#endif
 
 void yyerror(char const *s) {
     if(isNewError(yylineno, 'B')) {
@@ -954,6 +923,72 @@ int isNewError(int errorLineno, const char errorChar) {
 
 int yywrap() {
     return 1;
+}
+
+void traverseSyntaxTree(struct SyntaxTreeNode *root, int indent)
+{
+    if (root == NULL)
+    {
+        return;
+    }
+    
+#ifdef LAB1
+    // LAB 1: 打印节点信息
+    printNodeInfo(root, indent);
+#endif
+    
+    for(struct SyntaxTreeNode *p = root->child; p != NULL; p = p->sibling)
+    {
+        traverseSyntaxTree(p, indent + 1);
+    }
+}
+
+void destroySyntaxTree(struct SyntaxTreeNode *root)
+{
+    if (root == NULL)
+    {
+        return;
+    }
+    destroySyntaxTree(root->child);
+    destroySyntaxTree(root->sibling);
+    free(root);
+}
+
+void insertSyntaxTree(struct SyntaxTreeNode *node, struct SyntaxTreeNode *root)
+{
+    if (root == NULL || node == NULL)
+    {
+#if YYDEBUG > 0
+        printf("insert error: root or node is NULL \n");
+#endif // YYDEBUG
+        return;
+    }
+    if (root->child == NULL)
+    {
+        root->child = node;
+    }
+    else
+    {
+        struct SyntaxTreeNode *p = root->child;
+        while (p->sibling != NULL)
+        {
+            p = p->sibling;
+        }
+        p->sibling = node;
+    }
+    root->childCount++;
+}
+
+struct SyntaxTreeNode *createNewNode(char *name, enum SyntaxTreeNodeType type, int lineno)
+{
+    struct SyntaxTreeNode *node = (struct SyntaxTreeNode *)malloc(sizeof(struct SyntaxTreeNode));
+    node->name = name;
+    node->type = type;
+    node->lineno = lineno;
+    node->childCount = 0;
+    node->child = NULL;
+    node->sibling = NULL;
+    return node;
 }
 
 int main(int argc, char *argv[]) {
