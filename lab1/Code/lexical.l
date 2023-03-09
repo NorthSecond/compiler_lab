@@ -71,6 +71,7 @@ OCT                 [0-7]
         }
         c = input();
     }
+    // yylval.string=strdup(yytext);
     // return yytext[0];
 }
 "\*/"                           {
@@ -97,10 +98,11 @@ OCT                 [0-7]
 "\|\|"                          {RETURN_TOKEN(OR);}
 {DOT}                           {RETURN_TOKEN(DOT);}
 "!"                             {RETURN_TOKEN(NOT);}
-int|float                     {
+int|float                       {
     // printf("TYPE: %s\n", yytext);
     yylval.string=strdup(yytext);
-    RETURN_TOKEN(TYPE);}
+    RETURN_TOKEN(TYPE);
+    }
 "("                             {RETURN_TOKEN(LP);}
 ")"                             {RETURN_TOKEN(RP);}
 "\["                            {RETURN_TOKEN(LB);}
@@ -122,6 +124,7 @@ int|float                     {
     0[Xx]{HEX}+                     |
     [1-9]{DIGIT}*
     */
+    bool hasError = false;
     if(yytext[0] == '0'){
         if(strlen(yytext) == 1){
             yylval.number=0;
@@ -133,36 +136,41 @@ int|float                     {
             if(strlen(yytext) == 2){
                 if(isNewError(yylineno, 'B')){
                     printf("Error type A at Line %d: Illegal hexadecimal number \"%s\".\n", yylineno, yytext);
-                    return;
+                    hasError = true;
                 }
             }
             for(int i = 2; i< strlen(yytext); i++){
                 if(!isxdigit(yytext[i])){
                     if(isNewError(yylineno, 'B')){
                         printf("Error type A at Line %d: Illegal hexadecimal number \"%s\".\n", yylineno, yytext);
-                        return;
+                        hasError = true;
                     }
                 }
             }
-            yylval.number=strtol(yytext, NULL, 16);
-            RETURN_TOKEN(INT);
+            if(!hasError){
+                yylval.number=strtol(yytext, NULL, 16);
+                RETURN_TOKEN(INT);
+            }
         }
+
         // 八进制
         for(int i = 1; i< strlen(yytext); i++){
             if(yytext[i] < '0' || yytext[i] > '7'){
                 if(isNewError(yylineno, 'B')){
                     printf("Error type A at Line %d: Illegal octal number \"%s\".\n", yylineno, yytext);
-                    return;
+                    hasError = true;
                 }
             }
         }
-
-        yylval.number=strtol(yytext, NULL, 8);
+        if(!hasError){
+            yylval.number=strtol(yytext, NULL, 8);
+            RETURN_TOKEN(INT);
+        }
+    }
+    if(!hasError){
+        yylval.number=atoi(yytext);
         RETURN_TOKEN(INT);
     }
-
-    yylval.number=atoi(yytext);
-    RETURN_TOKEN(INT);
 }
 {DIGIT}*{DOT}{DIGIT}*[Ee][+-]?{DIGIT}*    |
 {DIGIT}*{DOT}{DIGIT}*                     {
@@ -170,11 +178,12 @@ int|float                     {
     // {DIGIT}*{DOT}{DIGIT}*[Ee][+-]?{DIGIT}+     |
     // (0|[1-9]{DIGIT}*){DOT}{DIGIT}+
 
+    bool hasError = false;
     size_t len = strlen(yytext);
     if(yytext[len-1] == 'e' || yytext[len-1] == 'E' || yytext[len-1] == '.' || yytext[len-1] == '+' || yytext[len-1] == '-'){
         if(isNewError(yylineno, 'B')){
             printf("Error type A at Line %d: Illegal floating point number \"%s\".\n", yylineno, yytext);
-            return;
+            hasError = true;
         }
     }
 
@@ -187,7 +196,7 @@ int|float                     {
                 if(i == 1) {
                     if(isNewError(yylineno, 'B')){
                         printf("Error type A at Line %d: Illegal floating point number \"%s\".\n", yylineno, yytext);
-                        return;
+                        hasError = true;
                     }
                 }
                 hasE = true;
@@ -197,14 +206,16 @@ int|float                     {
         if(!hasE){
             if(isNewError(yylineno, 'B')){
                 printf("Error type A at Line %d: Illegal floating point number \"%s\".\n", yylineno, yytext);
-                return;
+                hasError = true;
             }
         }
     }
 
-    yylval.floats=atof(yytext);
-    // printf("FLOAT: %s\n", yytext);
-    RETURN_TOKEN(FLOAT);
+    if(!hasError){
+        yylval.floats=atof(yytext);
+        // printf("FLOAT: %s\n", yytext);
+        RETURN_TOKEN(FLOAT);
+    }
 }
 {LETTER}({LETTER}|{DIGIT})*     {
     yylval.string=strdup(yytext);
@@ -217,7 +228,6 @@ int|float                     {
     if(isNewError(yylineno, 'B')){
         printf("Error type A at Line %d: Undefined token \"%s\".\n", yylineno, yytext);
     }
-    return yytext[0];
 }
 
 %% // end of rules

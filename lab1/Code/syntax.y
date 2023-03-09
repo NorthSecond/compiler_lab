@@ -433,6 +433,15 @@ Stmt : Exp SEMI {
 
     $$ = nodeStmt;
 }
+/* | error{
+    // 读到error，说明出现了语法错误，需要跳过这一行
+    while (yylex() != SEMI && yylex() != E_O_F);
+// #if YYDEBUG > 0
+//     puts("Now we are in Stmt, and we have read a line of error");
+// #endif
+    yyerrok;
+    yyclearin;
+} */
 ;
 
 // Local Definitions
@@ -558,28 +567,6 @@ Exp : Exp ASSIGNOP Exp {
     insertSyntaxTree((struct SyntaxTreeNode*)$3, nodeExp);
 
     $$ = nodeExp;
-}
-| Exp PLUS error {
-    if(isNewError(@3.first_line, 'B')){
-        errors[errorCount].lineno = yylineno;
-        errors[errorCount].character = 'B';
-        errorCount++;
-
-        printf("Error type B at Line %d: Syntax error after \"+\". \n", @3.first_line);
-
-        struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
-
-        struct SyntaxTreeNode* nodePLUS = createNewNode("PLUS", NONVALUENODE, @2.first_line);
-        struct SyntaxTreeNode* nodeErr = createNewNode("error", NONEPSILON, @3.first_line);
-
-        insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeErr);
-        insertSyntaxTree(nodePLUS, nodeExp);
-        insertSyntaxTree(nodeErr, nodeExp);
-
-        $$ = nodeExp;
-    } else {
-        $$ = NULL;
-    }
 }
 | Exp MINUS Exp {
     struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
@@ -758,6 +745,9 @@ Args : Exp COMMA Args {
 
 void yyerror(char const *s) {
     if(isNewError(yylineno, 'B')) {
+#if YYDEBUG > 0
+        printf("B: %s \n", yytext);
+#endif
         printf("Error type B at Line %d: %s \n", yylineno, s);
     }
 }

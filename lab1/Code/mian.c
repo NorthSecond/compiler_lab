@@ -24,8 +24,10 @@ int main(int argc, char *argv[])
         printf("Error: Could not open file %s \n", argv[1]);
         return 1;
     }
+
     yyrestart(yyin);
     yyparse();
+    
     fclose(yyin);
 
 #ifdef LAB1
