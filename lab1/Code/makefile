@@ -53,7 +53,3 @@ clean:
 	rm -f $(OBJS) $(OBJS:.o=.d)
 	rm -f $(LFC) $(YFC) $(YFC:.c=.h)
 	rm -f *~
-# 使用gdb调试
-debug:
-	gdb parser -ex "set args ../Test/2.cmm" -ex "r" -ex "bt" -ex "q"
-	
