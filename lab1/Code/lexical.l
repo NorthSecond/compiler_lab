@@ -224,7 +224,7 @@ int|float                       {
 }
 
 .                               {
-    // FIXME: error type A 但是一行只能一个错误
+    // error type A 但是一行只能一个错误
     if(isNewError(yylineno, 'B')){
         printf("Error type A at Line %d: Undefined token \"%s\".\n", yylineno, yytext);
     }

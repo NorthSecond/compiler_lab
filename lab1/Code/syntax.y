@@ -17,6 +17,7 @@ void yyerror(char const * s);
 int isNewError(int errorLineno, const char errorChar);
 
 extern int yylineno;
+// extern int yycolumn;
 
 %}
 
@@ -433,15 +434,13 @@ Stmt : Exp SEMI {
 
     $$ = nodeStmt;
 }
-/* | error{
+| error{
+    size_t line = @1.first_line;
     // 读到error，说明出现了语法错误，需要跳过这一行
-    while (yylex() != SEMI && yylex() != E_O_F);
-// #if YYDEBUG > 0
-//     puts("Now we are in Stmt, and we have read a line of error");
-// #endif
+    while (yylex() != SEMI && yylex() != RC && line == yylineno);
     yyerrok;
     yyclearin;
-} */
+}
 ;
 
 // Local Definitions
