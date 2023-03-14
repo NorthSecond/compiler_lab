@@ -77,6 +77,7 @@ extern int yylineno;
                     LP 
                     RP
 %nonassoc           ELSE
+                    error
 
 /* non-terminals */
 %type <type_pnode> Program
@@ -107,6 +108,18 @@ Program : ExtDefList {
     struct SyntaxTreeNode* nodeProgram = createNewNode("Program", NONEPSILON, @$.first_line);
 
     insertSyntaxTree((struct SyntaxTreeNode*) $1, nodeProgram);
+
+    syntaxTreeRoot = nodeProgram;
+
+    $$ = nodeProgram;
+}
+// error handling
+| ExtDecList error {
+    struct SyntaxTreeNode* nodeProgram = createNewNode("Program", NONEPSILON, @$.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @2.first_line);
+
+    insertSyntaxTree((struct SyntaxTreeNode*) $1, nodeProgram);
+    insertSyntaxTree(nodeErr, nodeProgram);
 
     syntaxTreeRoot = nodeProgram;
 
@@ -147,6 +160,15 @@ ExtDef : Specifier ExtDecList SEMI {
     insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeExtDef);
     insertSyntaxTree((struct SyntaxTreeNode*)$2, nodeExtDef);
     insertSyntaxTree((struct SyntaxTreeNode*)$3, nodeExtDef);
+
+    $$ = nodeExtDef;
+}
+// error handling
+| Specifier error {
+    struct SyntaxTreeNode* nodeExtDef = createNewNode("ExtDef", NONEPSILON, @$.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @2.first_line);
+
+    insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeExtDef);
 
     $$ = nodeExtDef;
 }
@@ -210,6 +232,22 @@ StructSpecifier : STRUCT OptTag LC DefList RC {
 
     $$ = nodeStructSpecifier;
 }
+// error handling
+| STRUCT OptTag LC DefList error {
+    struct SyntaxTreeNode* nodeStructSpecifier = createNewNode("StructSpecifier", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeStruct = createNewNode("STRUCT", NONVALUENODE, @1.first_line);
+    struct SyntaxTreeNode* nodeLC = createNewNode("LC", NONVALUENODE, @3.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @5.first_line);
+
+    insertSyntaxTree(nodeStruct, nodeStructSpecifier);
+    insertSyntaxTree((struct SyntaxTreeNode*)$2, nodeStructSpecifier);
+    insertSyntaxTree(nodeLC, nodeStructSpecifier);
+    insertSyntaxTree((struct SyntaxTreeNode*)$4, nodeStructSpecifier);
+    insertSyntaxTree(nodeErr, nodeStructSpecifier);
+
+    $$ = nodeStructSpecifier;
+}
 ;
 
 OptTag : ID {
@@ -264,6 +302,34 @@ VarDec : ID {
 
     $$ = nodeVarDec;
 }
+// error handling
+| VarDec LB error RB {
+    struct SyntaxTreeNode* nodeVarDec = createNewNode("VarDec", NONEPSILON, @$.first_line);
+    struct SyntaxTreeNode* nodeLB = createNewNode("LB", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @3.first_line);
+    struct SyntaxTreeNode* nodeRB = createNewNode("RB", NONVALUENODE, @4.first_line);
+
+    insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeVarDec);
+    insertSyntaxTree(nodeLB, nodeVarDec);
+    insertSyntaxTree(nodeErr, nodeVarDec);
+    insertSyntaxTree(nodeRB, nodeVarDec);
+
+    $$ = nodeVarDec;
+}
+| VarDec LB INT error {
+    struct SyntaxTreeNode* nodeVarDec = createNewNode("VarDec", NONEPSILON, @$.first_line);
+    struct SyntaxTreeNode* nodeLB = createNewNode("LB", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeINT = createNewNode("INT", INTNODE, @3.first_line);
+    nodeINT->intVal = $3;
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @4.first_line);
+
+    insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeVarDec);
+    insertSyntaxTree(nodeLB, nodeVarDec);
+    insertSyntaxTree(nodeINT, nodeVarDec);
+    insertSyntaxTree(nodeErr, nodeVarDec);
+
+    $$ = nodeVarDec;
+}
 ;
 
 FunDec : ID LP VarList RP {
@@ -291,6 +357,59 @@ FunDec : ID LP VarList RP {
     insertSyntaxTree(nodeID, nodeFunDec);
     insertSyntaxTree(nodeLP, nodeFunDec);
     insertSyntaxTree(nodeRP, nodeFunDec);
+
+    $$ = nodeFunDec;
+}
+// error handling
+| ID LP error RP {
+    struct SyntaxTreeNode* nodeFunDec = createNewNode("FunDec", NONEPSILON, @$.first_line);
+    struct SyntaxTreeNode* nodeID = createNewNode("ID", IDNODE, @1.first_line);
+    nodeID->stringVal = $1;
+    struct SyntaxTreeNode* nodeLP = createNewNode("LP", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @3.first_line);
+    struct SyntaxTreeNode* nodeRP = createNewNode("RP", NONVALUENODE, @4.first_line);
+
+    insertSyntaxTree(nodeID, nodeFunDec);
+    insertSyntaxTree(nodeLP, nodeFunDec);
+    insertSyntaxTree(nodeErr, nodeFunDec);
+    insertSyntaxTree(nodeRP, nodeFunDec);
+
+    $$ = nodeFunDec;
+}
+| ID LP error {
+    struct SyntaxTreeNode* nodeFunDec = createNewNode("FunDec", NONEPSILON, @$.first_line);
+    struct SyntaxTreeNode* nodeID = createNewNode("ID", IDNODE, @1.first_line);
+    nodeID->stringVal = $1;
+    struct SyntaxTreeNode* nodeLP = createNewNode("LP", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @3.first_line);
+
+    insertSyntaxTree(nodeID, nodeFunDec);
+    insertSyntaxTree(nodeLP, nodeFunDec);
+    insertSyntaxTree(nodeErr, nodeFunDec);
+
+    $$ = nodeFunDec;
+}
+| ID error RP {
+    struct SyntaxTreeNode* nodeFunDec = createNewNode("FunDec", NONEPSILON, @$.first_line);
+    struct SyntaxTreeNode* nodeID = createNewNode("ID", IDNODE, @1.first_line);
+    nodeID->stringVal = $1;
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeRP = createNewNode("RP", NONVALUENODE, @3.first_line);
+
+    insertSyntaxTree(nodeID, nodeFunDec);
+    insertSyntaxTree(nodeErr, nodeFunDec);
+    insertSyntaxTree(nodeRP, nodeFunDec);
+
+    $$ = nodeFunDec;
+}
+| ID error {
+    struct SyntaxTreeNode* nodeFunDec = createNewNode("FunDec", NONEPSILON, @$.first_line);
+    struct SyntaxTreeNode* nodeID = createNewNode("ID", IDNODE, @1.first_line);
+    nodeID->stringVal = $1;
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @2.first_line);
+
+    insertSyntaxTree(nodeID, nodeFunDec);
+    insertSyntaxTree(nodeErr, nodeFunDec);
 
     $$ = nodeFunDec;
 }
@@ -336,6 +455,59 @@ CompSt : LC DefList StmtList RC {
     insertSyntaxTree((struct SyntaxTreeNode*)$2, nodeCompSt);
     insertSyntaxTree((struct SyntaxTreeNode*)$3, nodeCompSt);
     insertSyntaxTree(nodeRC, nodeCompSt);
+
+    $$ = nodeCompSt;
+}
+// error handling
+| LC error StmtList RC {
+    struct SyntaxTreeNode* nodeCompSt = createNewNode("CompSt", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeLC = createNewNode("LC", NONVALUENODE, @1.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeRC = createNewNode("RC", NONVALUENODE, @4.first_line);
+
+    insertSyntaxTree(nodeLC, nodeCompSt);
+    insertSyntaxTree(nodeErr, nodeCompSt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$3, nodeCompSt);
+    insertSyntaxTree(nodeRC, nodeCompSt);
+
+    $$ = nodeCompSt;
+}
+/* | LC DefList error RC {
+    struct SyntaxTreeNode* nodeCompSt = createNewNode("CompSt", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeLC = createNewNode("LC", NONVALUENODE, @1.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @3.first_line);
+    struct SyntaxTreeNode* nodeRC = createNewNode("RC", NONVALUENODE, @4.first_line);
+
+    insertSyntaxTree(nodeLC, nodeCompSt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$2, nodeCompSt);
+    insertSyntaxTree(nodeErr, nodeCompSt);
+    insertSyntaxTree(nodeRC, nodeCompSt);
+
+    $$ = nodeCompSt;
+} */
+/* error DefList StmtList RC {
+    struct SyntaxTreeNode* nodeCompSt = createNewNode("CompSt", NONEPSILON, @$.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @1.first_line);
+    struct SyntaxTreeNode* nodeRC = createNewNode("RC", NONVALUENODE, @4.first_line);
+
+    insertSyntaxTree(nodeErr, nodeCompSt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$2, nodeCompSt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$3, nodeCompSt);
+    insertSyntaxTree(nodeRC, nodeCompSt);
+
+    $$ = nodeCompSt;
+} */
+| LC DefList StmtList error {
+    struct SyntaxTreeNode* nodeCompSt = createNewNode("CompSt", NONEPSILON, @$.first_line);
+    struct SyntaxTreeNode* nodeLC = createNewNode("LC", NONVALUENODE, @1.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @4.first_line);
+
+    insertSyntaxTree(nodeLC, nodeCompSt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$2, nodeCompSt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$3, nodeCompSt);
+    insertSyntaxTree(nodeErr, nodeCompSt);
 
     $$ = nodeCompSt;
 }
@@ -434,12 +606,163 @@ Stmt : Exp SEMI {
 
     $$ = nodeStmt;
 }
-| error{
-    size_t line = @1.first_line;
-    // 读到error，说明出现了语法错误，需要跳过这一行
-    while (yylex() != SEMI && yylex() != RC && line == yylineno);
-    yyerrok;
-    yyclearin;
+// error handling
+| Exp error {
+    struct SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @2.first_line);
+
+    insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeStmt);
+    insertSyntaxTree(nodeErr, nodeStmt);
+
+    $$ = nodeStmt;
+}
+| RETURN Exp error {
+    struct SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
+    struct SyntaxTreeNode* nodeRETURN = createNewNode("RETURN", NONVALUENODE, @1.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @3.first_line);
+
+    insertSyntaxTree(nodeRETURN, nodeStmt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$2, nodeStmt);
+    insertSyntaxTree(nodeErr, nodeStmt);
+
+    $$ = nodeStmt;
+}
+| IF LP Exp RP Stmt error {
+    struct SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeIF = createNewNode("IF", NONVALUENODE, @1.first_line);
+    struct SyntaxTreeNode* nodeLP = createNewNode("LP", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeRP = createNewNode("RP", NONVALUENODE, @4.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @6.first_line);
+
+    insertSyntaxTree(nodeIF, nodeStmt);
+    insertSyntaxTree(nodeLP, nodeStmt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$3, nodeStmt);
+    insertSyntaxTree(nodeRP, nodeStmt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$5, nodeStmt);
+    insertSyntaxTree(nodeErr, nodeStmt);
+
+    $$ = nodeStmt;
+}
+/* | IF LP Exp RP Stmt ELSE Stmt error {
+    struct SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeIF = createNewNode("IF", NONVALUENODE, @1.first_line);
+    struct SyntaxTreeNode* nodeLP = createNewNode("LP", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeRP = createNewNode("RP", NONVALUENODE, @4.first_line);
+    struct SyntaxTreeNode* nodeELSE = createNewNode("ELSE", NONVALUENODE, @6.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @8.first_line);
+
+    insertSyntaxTree(nodeIF, nodeStmt);
+    insertSyntaxTree(nodeLP, nodeStmt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$3, nodeStmt);
+    insertSyntaxTree(nodeRP, nodeStmt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$5, nodeStmt);
+    insertSyntaxTree(nodeELSE, nodeStmt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$7, nodeStmt);
+    insertSyntaxTree(nodeErr, nodeStmt);
+
+    $$ = nodeStmt;
+} */
+| IF LP Exp error Stmt {
+    struct SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeIF = createNewNode("IF", NONVALUENODE, @1.first_line);
+    struct SyntaxTreeNode* nodeLP = createNewNode("LP", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeRP = createNewNode("RP", NONVALUENODE, @4.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @3.first_line);
+
+    insertSyntaxTree(nodeIF, nodeStmt);
+    insertSyntaxTree(nodeLP, nodeStmt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$3, nodeStmt);
+    insertSyntaxTree(nodeErr, nodeStmt);
+    insertSyntaxTree(nodeRP, nodeStmt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$5, nodeStmt);
+
+    $$ = nodeStmt;
+}
+| IF LP error RP Stmt {
+    struct SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeIF = createNewNode("IF", NONVALUENODE, @1.first_line);
+    struct SyntaxTreeNode* nodeLP = createNewNode("LP", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeRP = createNewNode("RP", NONVALUENODE, @4.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @3.first_line);
+
+    insertSyntaxTree(nodeIF, nodeStmt);
+    insertSyntaxTree(nodeLP, nodeStmt);
+    insertSyntaxTree(nodeErr, nodeStmt);
+    insertSyntaxTree(nodeRP, nodeStmt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$5, nodeStmt);
+
+    $$ = nodeStmt;
+}
+| IF LP Exp RP error Stmt {
+    struct SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeIF = createNewNode("IF", NONVALUENODE, @1.first_line);
+    struct SyntaxTreeNode* nodeLP = createNewNode("LP", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeRP = createNewNode("RP", NONVALUENODE, @4.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @5.first_line);
+
+    insertSyntaxTree(nodeIF, nodeStmt);
+    insertSyntaxTree(nodeLP, nodeStmt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$3, nodeStmt);
+    insertSyntaxTree(nodeRP, nodeStmt);
+    insertSyntaxTree(nodeErr, nodeStmt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$6, nodeStmt);
+
+    $$ = nodeStmt;
+}
+/* | IF LP Exp RP Stmt error {
+    struct SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeIF = createNewNode("IF", NONVALUENODE, @1.first_line);
+    struct SyntaxTreeNode* nodeLP = createNewNode("LP", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeRP = createNewNode("RP", NONVALUENODE, @4.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @6.first_line);
+
+    insertSyntaxTree(nodeIF, nodeStmt);
+    insertSyntaxTree(nodeLP, nodeStmt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$3, nodeStmt);
+    insertSyntaxTree(nodeRP, nodeStmt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$5, nodeStmt);
+    insertSyntaxTree(nodeErr, nodeStmt);
+
+    $$ = nodeStmt;
+} */
+| WHILE LP Exp error Stmt {
+    struct SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeWHILE = createNewNode("WHILE", NONVALUENODE, @1.first_line);
+    struct SyntaxTreeNode* nodeLP = createNewNode("LP", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeRP = createNewNode("RP", NONVALUENODE, @4.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @3.first_line);
+
+    insertSyntaxTree(nodeWHILE, nodeStmt);
+    insertSyntaxTree(nodeLP, nodeStmt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$3, nodeStmt);
+    insertSyntaxTree(nodeErr, nodeStmt);
+    insertSyntaxTree(nodeRP, nodeStmt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$5, nodeStmt);
+
+    $$ = nodeStmt;
+}
+| WHILE LP error RP Stmt {
+    struct SyntaxTreeNode* nodeStmt = createNewNode("Stmt", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeWHILE = createNewNode("WHILE", NONVALUENODE, @1.first_line);
+    struct SyntaxTreeNode* nodeLP = createNewNode("LP", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeRP = createNewNode("RP", NONVALUENODE, @4.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @3.first_line);
+
+    insertSyntaxTree(nodeWHILE, nodeStmt);
+    insertSyntaxTree(nodeLP, nodeStmt);
+    insertSyntaxTree(nodeErr, nodeStmt);
+    insertSyntaxTree(nodeRP, nodeStmt);
+    insertSyntaxTree((struct SyntaxTreeNode*)$5, nodeStmt);
+
+    $$ = nodeStmt;
 }
 ;
 
@@ -466,6 +789,30 @@ Def : Specifier DecList SEMI {
 
     insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeDef);
     insertSyntaxTree((struct SyntaxTreeNode*)$2, nodeDef);
+    insertSyntaxTree(nodeSEMI, nodeDef);
+
+    $$ = nodeDef;
+}
+// error handling
+| Specifier DecList error {
+    struct SyntaxTreeNode* nodeDef = createNewNode("Def", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @3.first_line);
+
+    insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeDef);
+    insertSyntaxTree((struct SyntaxTreeNode*)$2, nodeDef);
+    insertSyntaxTree(nodeErr, nodeDef);
+
+    $$ = nodeDef;
+}
+| Specifier error SEMI {
+    struct SyntaxTreeNode* nodeDef = createNewNode("Def", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeSEMI = createNewNode("SEMI", NONVALUENODE, @3.first_line);
+
+    insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeDef);
+    insertSyntaxTree(nodeErr, nodeDef);
     insertSyntaxTree(nodeSEMI, nodeDef);
 
     $$ = nodeDef;
@@ -509,9 +856,34 @@ Dec : VarDec {
 
     $$ = nodeDec;
 }
+// error handling
+| VarDec error Exp {
+    struct SyntaxTreeNode* nodeDec = createNewNode("Dec", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @2.first_line);
+
+    insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeDec);
+    insertSyntaxTree(nodeErr, nodeDec);
+    insertSyntaxTree((struct SyntaxTreeNode*)$3, nodeDec);
+
+    $$ = nodeDec;
+}
+| VarDec ASSIGNOP error {
+    struct SyntaxTreeNode* nodeDec = createNewNode("Dec", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeASSIGNOP = createNewNode("ASSIGNOP", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @3.first_line);
+
+    insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeDec);
+    insertSyntaxTree(nodeASSIGNOP, nodeDec);
+    insertSyntaxTree(nodeErr, nodeDec);
+
+    $$ = nodeDec;
+}
 ;
 
 // Expressions
+// 由于过于复杂，Exp 的错误恢复就放在对应的定义下面了
 Exp : Exp ASSIGNOP Exp {
     struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
 
@@ -520,6 +892,18 @@ Exp : Exp ASSIGNOP Exp {
     insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeExp);
     insertSyntaxTree(nodeASSIGNOP, nodeExp);
     insertSyntaxTree((struct SyntaxTreeNode*)$3, nodeExp);
+
+    $$ = nodeExp;
+}
+| Exp ASSIGNOP error {
+    struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeASSIGNOP = createNewNode("ASSIGNOP", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @3.first_line);
+
+    insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeExp);
+    insertSyntaxTree(nodeASSIGNOP, nodeExp);
+    insertSyntaxTree(nodeErr, nodeExp);
 
     $$ = nodeExp;
 }
@@ -534,6 +918,18 @@ Exp : Exp ASSIGNOP Exp {
 
     $$ = nodeExp;
 }
+| Exp AND error {
+    struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeAND = createNewNode("AND", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @3.first_line);
+
+    insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeExp);
+    insertSyntaxTree(nodeAND, nodeExp);
+    insertSyntaxTree(nodeErr, nodeExp);
+
+    $$ = nodeExp;
+}
 | Exp OR Exp {
     struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
 
@@ -542,6 +938,18 @@ Exp : Exp ASSIGNOP Exp {
     insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeExp);
     insertSyntaxTree(nodeOR, nodeExp);
     insertSyntaxTree((struct SyntaxTreeNode*)$3, nodeExp);
+
+    $$ = nodeExp;
+}
+| Exp OR error {
+    struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeOR = createNewNode("OR", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @3.first_line);
+
+    insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeExp);
+    insertSyntaxTree(nodeOR, nodeExp);
+    insertSyntaxTree(nodeErr, nodeExp);
 
     $$ = nodeExp;
 }
@@ -556,6 +964,18 @@ Exp : Exp ASSIGNOP Exp {
 
     $$ = nodeExp;
 }
+| Exp RELOP error {
+    struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeRELOP = createNewNode("RELOP", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @3.first_line);
+
+    insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeExp);
+    insertSyntaxTree(nodeRELOP, nodeExp);
+    insertSyntaxTree(nodeErr, nodeExp);
+
+    $$ = nodeExp;
+}
 | Exp PLUS Exp {
     struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
 
@@ -564,6 +984,18 @@ Exp : Exp ASSIGNOP Exp {
     insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeExp);
     insertSyntaxTree(nodePLUS, nodeExp);
     insertSyntaxTree((struct SyntaxTreeNode*)$3, nodeExp);
+
+    $$ = nodeExp;
+}
+| Exp PLUS error {
+    struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodePLUS = createNewNode("PLUS", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @3.first_line);
+
+    insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeExp);
+    insertSyntaxTree(nodePLUS, nodeExp);
+    insertSyntaxTree(nodeErr, nodeExp);
 
     $$ = nodeExp;
 }
@@ -578,6 +1010,18 @@ Exp : Exp ASSIGNOP Exp {
 
     $$ = nodeExp;
 }
+| Exp MINUS error {
+    struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeMINUS = createNewNode("MINUS", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @3.first_line);
+
+    insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeExp);
+    insertSyntaxTree(nodeMINUS, nodeExp);
+    insertSyntaxTree(nodeErr, nodeExp);
+
+    $$ = nodeExp;
+}
 | Exp STAR Exp {
     struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
 
@@ -589,6 +1033,18 @@ Exp : Exp ASSIGNOP Exp {
 
     $$ = nodeExp;
 }
+| Exp STAR error {
+    struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeSTAR = createNewNode("STAR", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @3.first_line);
+
+    insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeExp);
+    insertSyntaxTree(nodeSTAR, nodeExp);
+    insertSyntaxTree(nodeErr, nodeExp);
+
+    $$ = nodeExp;
+}
 | Exp DIV Exp {
     struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
 
@@ -597,6 +1053,18 @@ Exp : Exp ASSIGNOP Exp {
     insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeExp);
     insertSyntaxTree(nodeDIV, nodeExp);
     insertSyntaxTree((struct SyntaxTreeNode*)$3, nodeExp);
+
+    $$ = nodeExp;
+}
+| Exp DIV error {
+    struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeDIV = createNewNode("DIV", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @3.first_line);
+
+    insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeExp);
+    insertSyntaxTree(nodeDIV, nodeExp);
+    insertSyntaxTree(nodeErr, nodeExp);
 
     $$ = nodeExp;
 }
@@ -612,6 +1080,18 @@ Exp : Exp ASSIGNOP Exp {
 
     $$ = nodeExp;
 }
+| LP Exp error {
+    struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeLP = createNewNode("LP", NONVALUENODE, @1.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @3.first_line);
+    
+    insertSyntaxTree(nodeLP, nodeExp);
+    insertSyntaxTree((struct SyntaxTreeNode*)$2, nodeExp);
+    insertSyntaxTree(nodeErr, nodeExp);
+
+    $$ = nodeExp;
+}
 | MINUS Exp {
     struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
 
@@ -622,6 +1102,17 @@ Exp : Exp ASSIGNOP Exp {
 
     $$ = nodeExp;
 }
+| MINUS error {
+    struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeMINUS = createNewNode("MINUS", NONVALUENODE, @1.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @2.first_line);
+    
+    insertSyntaxTree(nodeMINUS, nodeExp);
+    insertSyntaxTree(nodeErr, nodeExp);
+
+    $$ = nodeExp;
+}
 | NOT Exp {
     struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
 
@@ -629,6 +1120,17 @@ Exp : Exp ASSIGNOP Exp {
     
     insertSyntaxTree(nodeNOT, nodeExp);
     insertSyntaxTree((struct SyntaxTreeNode*)$2, nodeExp);
+
+    $$ = nodeExp;
+}
+| NOT error {
+    struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeNOT = createNewNode("NOT", NONVALUENODE, @1.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @2.first_line);
+    
+    insertSyntaxTree(nodeNOT, nodeExp);
+    insertSyntaxTree(nodeErr, nodeExp);
 
     $$ = nodeExp;
 }
@@ -647,6 +1149,21 @@ Exp : Exp ASSIGNOP Exp {
 
     $$ = nodeExp;
 }
+| ID LP Args error {
+    struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeID = createNewNode("ID", IDNODE, @1.first_line);
+    nodeID->stringVal = $1;
+    struct SyntaxTreeNode* nodeLP = createNewNode("LP", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @4.first_line);
+    
+    insertSyntaxTree(nodeID, nodeExp);
+    insertSyntaxTree(nodeLP, nodeExp);
+    insertSyntaxTree((struct SyntaxTreeNode*)$3, nodeExp);
+    insertSyntaxTree(nodeErr, nodeExp);
+
+    $$ = nodeExp;
+} 
 | ID LP RP {
     struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
 
@@ -658,6 +1175,20 @@ Exp : Exp ASSIGNOP Exp {
     insertSyntaxTree(nodeID, nodeExp);
     insertSyntaxTree(nodeLP, nodeExp);
     insertSyntaxTree(nodeRP, nodeExp);
+
+    $$ = nodeExp;
+}
+| ID LP error {
+    struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeID = createNewNode("ID", IDNODE, @1.first_line);
+    nodeID->stringVal = $1;
+    struct SyntaxTreeNode* nodeLP = createNewNode("LP", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @3.first_line);
+    
+    insertSyntaxTree(nodeID, nodeExp);
+    insertSyntaxTree(nodeLP, nodeExp);
+    insertSyntaxTree(nodeErr, nodeExp);
 
     $$ = nodeExp;
 }
@@ -674,6 +1205,33 @@ Exp : Exp ASSIGNOP Exp {
 
     $$ = nodeExp;
 }
+| Exp LB Exp error {
+    struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeLB = createNewNode("LB", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @4.first_line);
+    
+    insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeExp);
+    insertSyntaxTree(nodeLB, nodeExp);
+    insertSyntaxTree((struct SyntaxTreeNode*)$3, nodeExp);
+    insertSyntaxTree(nodeErr, nodeExp);
+
+    $$ = nodeExp;
+}
+| Exp LB error RB {
+    struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeLB = createNewNode("LB", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @3.first_line);
+    struct SyntaxTreeNode* nodeRB = createNewNode("RB", NONVALUENODE, @4.first_line);
+
+    insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeExp);
+    insertSyntaxTree(nodeLB, nodeExp);
+    insertSyntaxTree(nodeErr, nodeExp);
+    insertSyntaxTree(nodeRB, nodeExp);
+
+    $$ = nodeExp;
+}
 | Exp DOT ID {
     struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
 
@@ -683,6 +1241,31 @@ Exp : Exp ASSIGNOP Exp {
     
     insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeExp);
     insertSyntaxTree(nodeDOT, nodeExp);
+    insertSyntaxTree(nodeID, nodeExp);
+
+    $$ = nodeExp;
+}
+| Exp DOT error {
+    struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeDOT = createNewNode("DOT", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @3.first_line);
+    
+    insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeExp);
+    insertSyntaxTree(nodeDOT, nodeExp);
+    insertSyntaxTree(nodeErr, nodeExp);
+
+    $$ = nodeExp;
+}
+| Exp error ID {
+    struct SyntaxTreeNode* nodeExp = createNewNode("Exp", NONEPSILON, @$.first_line);
+
+    struct SyntaxTreeNode* nodeErr = createNewNode("error", NONVALUENODE, @2.first_line);
+    struct SyntaxTreeNode* nodeID = createNewNode("ID", IDNODE, @3.first_line);
+    nodeID->stringVal = $3;
+    
+    insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeExp);
+    insertSyntaxTree(nodeErr, nodeExp);
     insertSyntaxTree(nodeID, nodeExp);
 
     $$ = nodeExp;
