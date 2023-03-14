@@ -150,7 +150,7 @@ ExtDef : Specifier ExtDecList SEMI {
 | Specifier SEMI {
     struct SyntaxTreeNode* nodeExtDef = createNewNode("ExtDef", NONEPSILON, @$.first_line);
     insertSyntaxTree((struct SyntaxTreeNode*)$1, nodeExtDef);
-    struct SyntaxTreeNode* nodeSemi = createNewNode("SEMI", NONEPSILON, @2.first_line);
+    struct SyntaxTreeNode* nodeSemi = createNewNode("SEMI", NONVALUENODE, @2.first_line);
     insertSyntaxTree(nodeSemi, nodeExtDef);
 
     $$ = nodeExtDef;
